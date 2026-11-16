@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" href="icon.svg">
 <link rel="icon" href="icon.svg">
-<script src="config.js?v=3"></script>
+<script src="config.js?v=4"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&family=Frank+Ruhl+Libre:wght@500;700&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
@@ -789,7 +789,8 @@ async function recommend(more){
     if (sample && !aiOff){
       reqCtl = new AbortController();
       try {
-        out = await ai({action:'recommend', request:req, avoid, style: styleNotes(), season:seasonNow(), date:todayStr(),
+        const st = styleNotes();
+        out = await ai({action:'recommend', request: st ? (req + ' — ובסגנון של לוח ההשראה שלה: ' + st).slice(0, 300) : req, avoid, style: st, season:seasonNow(), date:todayStr(),
           closet: itemsArr().map(it => ({id:it.id, name:it.name, cat:it.cat, colors:it.colors||[], style:it.style||[], season:it.season||'all', lastWorn:it.lastWorn||''}))}, reqCtl.signal);
       } catch(e){
         const k = sampleErr(e);
