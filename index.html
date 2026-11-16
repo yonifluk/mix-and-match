@@ -9,7 +9,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" href="icon.svg">
 <link rel="icon" href="icon.svg">
-<script src="config.js?v=4"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="config.js?v=5"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&family=Frank+Ruhl+Libre:wght@500;700&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
@@ -40,6 +43,8 @@ input,textarea,select{font-family:inherit;font-size:16px;color:var(--ink)}
 .date{font-size:13px;color:var(--mute);margin-top:6px}
 .count-pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 12px;font-size:13px;color:var(--mute);white-space:nowrap}
 .count-pill b{color:var(--ink)}
+.cloud-pill{font-size:12.5px;border-radius:999px;padding:6px 11px;background:var(--rose);color:#fff;white-space:nowrap}
+.cloud-pill.on{background:#fff;color:var(--mute);border:1px solid var(--line)}
 
 h2{font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:26px;margin:4px 0 4px}
 .sub{color:var(--mute);font-size:14px;margin:0 0 16px}
@@ -205,7 +210,7 @@ h2{font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:26px;margin:4p
       <div class="logo">Mix<span>&amp;</span>Match</div>
       <div class="date" id="today-date"></div>
     </div>
-    <div class="count-pill" id="countPill"><b>0</b> פריטים בארון</div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="count-pill" id="countPill"><b>0</b> פריטים בארון</div><button class="cloud-pill" id="cloudPill">☁️ שמירה בענן</button></div>
   </header>
 
   <!-- TODAY -->
@@ -329,15 +334,15 @@ async function makeIdbStore(){
     async del(id){ await done(os('readwrite').delete(id)); delete state.items[id]; delete state.looks[id]; delete state.inspos[id]; renderAll(); }
   };
 }
-function makeDbStore(db, uid){
+function makeDbStore(db, uid, onFirst){
   const col = db.collection('users/' + uid + '/closet');
   const timer = setTimeout(() => { if (!state.loaded) $('#syncNote').innerHTML = '<div class="note">הארון עוד נטען… אם זה לוקח זמן, בדקי את החיבור לאינטרנט.</div>'; }, 10000);
-  col.onSnapshot(snap => {
-    const items = {}, looks = {};
-    snap.docs.forEach(d => { const v = d.data() || {}; if (v.kind === 'item') items[d.id] = {...v, id:d.id}; else if (v.kind === 'look') looks[d.id] = {...v, id:d.id}; });
-    state.items = items; state.looks = looks;
-    if (!snap.metadata.fromCache){ state.loaded = true; clearTimeout(timer); $('#syncNote').innerHTML = ''; }
-    else state.loaded = true;
+  let first = true;
+  const unsub = col.onSnapshot(snap => {
+    const items = {}, looks = {}, inspos = {};
+    snap.docs.forEach(d => { const v = d.data() || {}; if (v.kind === 'item') items[d.id] = {...v, id:d.id}; else if (v.kind === 'look') looks[d.id] = {...v, id:d.id}; else if (v.kind === 'inspo') inspos[d.id] = {...v, id:d.id}; });
+    if (!snap.metadata.fromCache && first){ first = false; clearTimeout(timer); $('#syncNote').innerHTML = ''; if (onFirst) onFirst(new Set(snap.docs.map(d => d.id))); }
+    state.items = items; state.looks = looks; state.inspos = inspos; state.loaded = true;
     renderAll();
   }, err => {
     clearTimeout(timer);
@@ -348,9 +353,10 @@ function makeDbStore(db, uid){
     async put(id, obj){
       const clean = {...obj}; delete clean.id;
       try { await col.doc(id).set(clean); }
-      catch(e){ toast(e && e.code === 'quota_exceeded' ? 'הארון מלא – מחקי כמה פריטים ישנים' : 'השמירה נכשלה, נסי שוב'); throw e; }
+      catch(e){ toast(e && e.code === 'resource-exhausted' ? 'הגענו למכסה היומית של הענן – נסי מחר' : 'השמירה נכשלה, נסי שוב'); throw e; }
     },
-    async del(id){ try { await col.doc(id).delete(); } catch(e){ toast('המחיקה נכשלה'); } }
+    async del(id){ try { await col.doc(id).delete(); } catch(e){ toast('המחיקה נכשלה'); } },
+    stop: () => unsub()
   };
 }
 
@@ -389,6 +395,8 @@ function renderAll(){
   document.querySelectorAll('.tab[data-v]').forEach(t => t.classList.toggle('on', t.dataset.v === view));
   const n = Object.keys(state.items).length;
   $('#countPill').innerHTML = `<b>${n}</b> ${n===1?'פריט':'פריטים'} בארון`;
+  const cp = $('#cloudPill'); cp.classList.toggle('hidden', !window.FIREBASE_CONFIG); cp.classList.toggle('on', !!cloudUser);
+  cp.textContent = cloudUser ? '☁️ שמור בענן' : '☁️ שמירה בענן';
   if (view === 'today') renderToday();
   if (view === 'closet') renderCloset();
   if (view === 'looks') renderLooks();
@@ -600,6 +608,19 @@ function bindActs(root){
 
 /* ---------- add flow ---------- */
 $('#fab').onclick = openAdd;
+$('#cloudPill').onclick = () => {
+  if (cloudUser){
+    openSheet(`<h3>☁️ הארון שלך בענן</h3><p style="line-height:1.6">מחוברת בתור <b>${esc(cloudUser.email || cloudUser.displayName || '')}</b>. הארון נשמר בענן ומופיע בכל טלפון ודפדפן שתתחברי ממנו.</p>
+      <div class="sheet-acts"><button class="btn ghost" id="soBtn">התנתקות</button><button class="btn rose" id="okBtn">מעולה</button></div>`);
+    $('#okBtn').onclick = closeSheet;
+    $('#soBtn').onclick = async () => { await auth.signOut(); closeSheet(); toast('התנתקת'); };
+  } else {
+    openSheet(`<h3>☁️ שמירה בענן</h3><p style="line-height:1.6">מתחברים עם Google, והארון, הלוקים ולוח ההשראה נשמרים בענן – בכל טלפון, בכל דפדפן, ולא הולכים לאיבוד.</p>
+      <p class="sub">מה שכבר נמצא בטלפון יעלה לענן אוטומטית. רק את רואה את הארון שלך.</p>
+      <button class="btn rose" style="width:100%;justify-content:center;padding:14px" id="gBtn">התחברות עם Google</button>`);
+    $('#gBtn').onclick = signIn;
+  }
+};
 function openAdd(){
   openSheet(`<h3>הוספת בגדים לארון</h3><p class="sub" style="margin:0">טיפ: צלמי כל פריט לבד, על רקע חלק (מיטה, רצפה או קיר).</p>
     <button class="big-opt" id="optCam"><div class="ic">📸</div><div><b>צילום עכשיו</b><span>פריט אחד בכל פעם</span></div></button>
@@ -959,10 +980,50 @@ async function ai(payload, signal){
 const h0 = location.hash.slice(1); if (['today','closet','looks'].includes(h0)) view = h0;
 renderAll();
 sample = window.MM_API_URL ? {} : null; imgOk = !!sample; aiOff = !sample;
+let localStore = null, cloudUser = null, auth = null;
 (async () => {
-  try { store = await makeIdbStore(); } catch(e){ store = makeLocalStore(); }
+  try { localStore = await makeIdbStore(); } catch(e){ localStore = makeLocalStore(); }
+  if (!store) store = localStore;
   renderAll();
+  if (!window.firebase || !window.FIREBASE_CONFIG) return;
+  try {
+    firebase.initializeApp(window.FIREBASE_CONFIG);
+    auth = firebase.auth();
+    const fdb = firebase.firestore();
+    try { await fdb.enablePersistence({synchronizeTabs: true}); } catch(e){}
+    auth.getRedirectResult().catch(e => console.warn(e));
+    auth.onAuthStateChanged(u => {
+      cloudUser = u;
+      if (u){
+        // snapshot of what is on this phone, to copy up on first sign-in
+        const local = [...Object.values(state.items), ...Object.values(state.looks), ...Object.values(state.inspos)];
+        if (store && store.stop) store.stop();
+        store = makeDbStore(fdb, u.uid, async cloudIds => {
+          const missing = local.filter(d => d && d.id && !cloudIds.has(d.id));
+          for (const d of missing){ const v = {...d}; delete v.id; try { await store.put(d.id, v); } catch(e){ break; } }
+          if (missing.length) toast(`☁️ ${missing.length} פריטים מהטלפון הועלו לענן`);
+        });
+      } else {
+        if (store === localStore){ renderAll(); return; }
+        if (store && store.stop) store.stop();
+        state.items = {}; state.looks = {}; state.inspos = {};
+        store = null;
+        makeIdbStore().then(s2 => { store = localStore = s2; renderAll(); }).catch(() => { store = localStore = makeLocalStore(); renderAll(); });
+      }
+      renderAll();
+    });
+  } catch(e){ console.warn('firebase init failed', e); }
 })();
+async function signIn(){
+  if (!auth){ toast('ההתחברות לא זמינה כרגע'); return; }
+  const p = new firebase.auth.GoogleAuthProvider();
+  p.setCustomParameters({prompt: 'select_account'});
+  try { await auth.signInWithPopup(p); closeSheet(); toast('מחוברת ✓ הארון נשמר בענן'); }
+  catch(e){
+    if (e && ['auth/popup-blocked','auth/operation-not-supported-in-this-environment','auth/cancelled-popup-request'].includes(e.code)) auth.signInWithRedirect(p);
+    else if (!(e && e.code === 'auth/popup-closed-by-user')) toast('ההתחברות נכשלה, נסי שוב');
+  }
+}
 })();
 </script>
 </body>
