@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mix and Match</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2B1E25">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" href="icon.svg">
+<script src="config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&family=Frank+Ruhl+Libre:wght@500;700&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6EFE9; --card:#FFFFFF; --ink:#241B1F; --mute:#8C8186; --line:#ECE1DA;
+  --rose:#C8466E; --rose-d:#A8335A; --blush:#F6CAD6; --cream:#FBF7F3;
+  --plum:#2B1E25; --plum2:#4B2C3A;
+  --shadow:0 14px 34px -16px rgba(90,30,55,.35);
+  --r:22px;
+  --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Heebo',system-ui,sans-serif;color:var(--ink);background:var(--bg);
+  background-image:radial-gradient(120% 60% at 100% 0%,#F9DCE4 0%,rgba(249,220,228,0) 55%),radial-gradient(90% 50% at 0% 30%,#F3E6D8 0%,rgba(243,230,216,0) 60%);
+  background-attachment:fixed;min-height:100vh;-webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
+input,textarea,select{font-family:inherit;font-size:16px;color:var(--ink)}
+.app{max-width:520px;margin:0 auto;padding:calc(18px + var(--sat)) 18px calc(120px + var(--sab))}
+
+/* header */
+.top{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
+.logo{font-family:'Playfair Display',serif;font-style:italic;font-weight:700;font-size:32px;letter-spacing:-.5px;line-height:1;direction:ltr}
+.logo span{color:var(--rose);font-weight:600;margin:0 2px}
+.date{font-size:13px;color:var(--mute);margin-top:6px}
+.count-pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 12px;font-size:13px;color:var(--mute);white-space:nowrap}
+.count-pill b{color:var(--ink)}
+
+h2{font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:26px;margin:4px 0 4px}
+.sub{color:var(--mute);font-size:14px;margin:0 0 16px}
+.view{display:none;animation:fade .35s ease}
+.view.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ask card */
+.ask{background:linear-gradient(150deg,var(--plum) 0%,var(--plum2) 100%);color:#fff;border-radius:28px;padding:22px 18px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.ask:before{content:"";position:absolute;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(246,202,214,.35),rgba(246,202,214,0) 70%);top:-90px;left:-70px}
+.ask h1{font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:27px;margin:0 0 4px;position:relative}
+.ask p{margin:0 0 14px;color:#E8D5DD;font-size:14px;position:relative}
+.ask textarea{width:100%;min-height:78px;resize:none;border-radius:18px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.09);color:#fff;padding:14px;line-height:1.45;outline:none;position:relative}
+.ask textarea::placeholder{color:#C9B3BD}
+.ask textarea:focus{border-color:var(--blush);background:rgba(255,255,255,.13)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:12px 0 2px;scrollbar-width:none;position:relative}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border-radius:999px;padding:8px 13px;font-size:13.5px;border:1px solid rgba(255,255,255,.22);color:#F6E8EE;background:rgba(255,255,255,.06);white-space:nowrap}
+.chip:active{transform:scale(.96)}
+.go{margin-top:14px;width:100%;border-radius:999px;padding:15px;font-size:17px;font-weight:700;background:linear-gradient(90deg,#F7C4D2,#F3A9BE);color:var(--plum);position:relative;box-shadow:0 10px 24px -10px rgba(243,169,190,.8)}
+.go:disabled{opacity:.6}
+.inspo-btn{margin-top:10px;width:100%;border-radius:999px;padding:12px;font-size:14.5px;color:#F6E8EE;border:1px dashed rgba(255,255,255,.35);position:relative}
+.resnote .insimg{width:64px;height:64px;border-radius:12px;object-fit:cover;float:left;margin-inline-start:10px}
+.resnote:after{content:"";display:block;clear:both}
+
+/* light chips (closet filters / edit) */
+.fchips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 14px;scrollbar-width:none}
+.fchips::-webkit-scrollbar{display:none}
+.fchip{flex:0 0 auto;border-radius:999px;padding:8px 14px;font-size:14px;background:#fff;border:1px solid var(--line);color:var(--ink);white-space:nowrap}
+.fchip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.fchip small{opacity:.6;margin-inline-start:4px}
+
+/* notice / empty */
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:18px}
+.empty{text-align:center;padding:26px 18px}
+.empty .art{font-size:44px;margin-bottom:6px}
+.empty h3{font-family:'Frank Ruhl Libre',serif;font-size:22px;margin:4px 0 6px}
+.empty p{color:var(--mute);margin:0 0 16px;font-size:14.5px;line-height:1.5}
+.btn{border-radius:999px;padding:12px 18px;font-weight:700;font-size:15px;background:var(--ink);color:#fff;display:inline-flex;align-items:center;gap:6px}
+.btn.rose{background:var(--rose)}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn.sm{padding:9px 14px;font-size:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.note{font-size:13.5px;color:var(--mute);background:#fff;border:1px dashed var(--line);border-radius:16px;padding:12px 14px;margin:14px 0;line-height:1.5}
+.note.warn{border-color:#E9B8C6;color:#8E3A55;background:#FFF5F8}
+
+/* results */
+#results{margin-top:22px}
+.loader{text-align:center;padding:30px 10px}
+.hangers{display:flex;justify-content:center;gap:14px;margin-bottom:12px}
+.hangers svg{width:46px;height:46px;transform-origin:50% 10%;animation:swing 1.4s ease-in-out infinite}
+.hangers svg:nth-child(2){animation-delay:.2s}.hangers svg:nth-child(3){animation-delay:.4s}
+@keyframes swing{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(10deg)}}
+.loader .msg{font-family:'Frank Ruhl Libre',serif;font-size:19px}
+.loader .stop{margin-top:14px}
+.resnote{font-size:14.5px;color:var(--ink);background:#fff;border-radius:16px;padding:12px 14px;margin-bottom:14px;line-height:1.5;border-inline-start:4px solid var(--blush)}
+.look{background:var(--card);border-radius:26px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:18px;animation:fade .45s ease both}
+.look:nth-child(2){animation-delay:.08s}.look:nth-child(3){animation-delay:.16s}.look:nth-child(4){animation-delay:.24s}
+.duo{display:grid;grid-template-columns:42% 1fr;background:var(--cream)}
+.stage{background:radial-gradient(80% 60% at 50% 40%,#FFFFFF 0%,#F7E6EA 100%);display:flex;align-items:center;justify-content:center;padding:14px 6px 10px;position:relative}
+.stage:after{content:"";position:absolute;bottom:12px;left:22%;right:22%;height:8px;border-radius:50%;background:rgba(90,40,60,.12);filter:blur(3px)}
+.fig{width:100%;max-height:300px;position:relative;z-index:1;filter:drop-shadow(0 6px 10px rgba(80,30,50,.15))}
+.skins{display:flex;align-items:center;gap:8px;margin:0 0 14px;font-size:13px;color:var(--mute)}
+.skins span{margin-inline-end:4px}
+.sw{width:24px;height:24px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.sw.on{box-shadow:0 0 0 2px var(--rose)}
+.collage{display:grid;gap:8px;padding:12px;background:var(--cream);align-content:center}
+.duo .collage.n5,.duo .collage.n6{grid-template-columns:1fr 1fr}
+.duo .collage.n5 .tile:first-child{grid-column:auto;grid-row:auto}
+.collage.n1{grid-template-columns:1fr}
+.collage.n2{grid-template-columns:1fr 1fr}
+.collage.n3,.collage.n4{grid-template-columns:1fr 1fr}
+.collage.n3 .tile:first-child{grid-row:span 2}
+.collage.n5,.collage.n6{grid-template-columns:1fr 1fr 1fr}
+.collage.n5 .tile:first-child{grid-column:span 2;grid-row:span 2}
+.tile{position:relative;border-radius:16px;overflow:hidden;background:#fff;aspect-ratio:1/1;min-height:0}
+.collage.n3 .tile:first-child{aspect-ratio:auto}
+.tile img{width:100%;height:100%;object-fit:cover;display:block}
+.tile .lbl{position:absolute;bottom:6px;right:6px;left:6px;font-size:11.5px;background:rgba(255,255,255,.88);backdrop-filter:blur(6px);border-radius:10px;padding:3px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.look .body{padding:16px 18px 18px}
+.look h3{font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:23px;margin:0 0 6px}
+.look .why{margin:0 0 10px;line-height:1.55;font-size:15px}
+.look .tip,.look .miss{font-size:14px;line-height:1.5;border-radius:14px;padding:9px 12px;margin-top:8px}
+.look .tip{background:#FBF1F4}
+.look .miss{background:#F3F0EA;color:#5E554F}
+.acts{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.acts .btn{flex:1;justify-content:center;min-width:0}
+.btn.saved{background:var(--blush);color:var(--rose-d)}
+.more{display:block;margin:4px auto 0}
+
+/* closet grid */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.item{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 8px 20px -14px rgba(90,30,55,.4);text-align:right;padding:0;position:relative}
+.item .ph{aspect-ratio:1/1;background:var(--cream)}
+.item .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.item .nm{font-size:12.5px;padding:7px 9px 9px;line-height:1.25;height:42px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.item .demo{position:absolute;top:6px;right:6px;font-size:10px;background:rgba(255,255,255,.9);border-radius:8px;padding:2px 6px;color:var(--mute)}
+.item.pending .ph{display:flex;align-items:center;justify-content:center}
+.spin{width:26px;height:26px;border-radius:50%;border:3px solid var(--blush);border-top-color:var(--rose);animation:rot .8s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.closet-actions{display:flex;justify-content:space-between;align-items:center;margin:18px 0 0;gap:10px;flex-wrap:wrap}
+.linkbtn{color:var(--mute);font-size:13.5px;text-decoration:underline}
+
+/* bottom nav */
+.nav{position:fixed;bottom:0;left:0;right:0;z-index:20;padding:0 14px calc(10px + var(--sab));pointer-events:none}
+.nav .bar{pointer-events:auto;max-width:480px;margin:0 auto;background:rgba(255,255,255,.86);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(236,225,218,.9);border-radius:28px;display:flex;align-items:center;justify-content:space-around;height:68px;box-shadow:0 12px 30px -14px rgba(60,20,40,.35)}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;color:var(--mute);width:72px;padding:6px 0}
+.tab svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tab.on{color:var(--rose)}
+.fab{width:60px;height:60px;border-radius:50%;background:linear-gradient(150deg,#D9577F,var(--rose-d));color:#fff;display:flex;align-items:center;justify-content:center;margin-top:-30px;box-shadow:0 12px 24px -8px rgba(200,70,110,.7);border:4px solid var(--bg)}
+.fab svg{width:28px;height:28px;stroke:#fff;stroke-width:2.2;fill:none;stroke-linecap:round}
+
+/* sheets */
+.backdrop{position:fixed;inset:0;background:rgba(30,15,22,.45);z-index:40;opacity:0;pointer-events:none;transition:opacity .25s}
+.backdrop.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;background:var(--bg);border-radius:28px 28px 0 0;max-width:560px;margin:0 auto;padding:10px 18px calc(22px + var(--sab));transform:translateY(105%);transition:transform .3s cubic-bezier(.2,.8,.2,1);max-height:92vh;overflow-y:auto}
+.sheet.on{transform:none}
+.grab{width:44px;height:5px;border-radius:5px;background:#D9CCC4;margin:0 auto 14px}
+.sheet h3{font-family:'Frank Ruhl Libre',serif;font-size:23px;margin:0 0 4px}
+.big-opt{display:flex;align-items:center;gap:14px;width:100%;background:#fff;border-radius:20px;padding:16px;margin-top:12px;text-align:right;box-shadow:0 8px 20px -16px rgba(90,30,55,.5)}
+.big-opt .ic{width:46px;height:46px;border-radius:14px;background:#FBEAF0;display:flex;align-items:center;justify-content:center;font-size:22px;flex:0 0 auto}
+.big-opt b{display:block;font-size:16px}
+.big-opt span{font-size:13px;color:var(--mute)}
+.field{margin-top:14px}
+.field label{display:block;font-size:13px;color:var(--mute);margin-bottom:6px}
+.field input[type=text]{width:100%;border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px 14px;outline:none}
+.field input[type=text]:focus{border-color:var(--rose)}
+.pick{display:flex;flex-wrap:wrap;gap:7px}
+.pick .fchip{font-size:13.5px;padding:7px 12px}
+.edit-ph{width:120px;height:120px;border-radius:20px;overflow:hidden;margin:6px auto 0;background:var(--cream);box-shadow:var(--shadow)}
+.edit-ph img{width:100%;height:100%;object-fit:cover}
+.sheet-acts{display:flex;gap:10px;margin-top:20px}
+.sheet-acts .btn{flex:1;justify-content:center}
+.btn.danger{background:#fff;color:#B23B5A;border:1px solid #F0C9D4}
+
+/* modal & toast */
+.modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(30,15,22,.45)}
+.modal.on{display:flex}
+.modal .box{background:#fff;border-radius:24px;padding:22px;max-width:340px;width:100%;text-align:center}
+.modal .box p{margin:0 0 18px;font-size:16px;line-height:1.5}
+.toast{position:fixed;left:50%;bottom:calc(100px + var(--sab));transform:translate(-50%,20px);background:var(--ink);color:#fff;border-radius:999px;padding:11px 18px;font-size:14px;z-index:70;opacity:0;transition:all .25s;pointer-events:none;max-width:88vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.hidden{display:none!important}
+.login{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:28px;background:linear-gradient(160deg,#F9DCE4,#F6EFE9 60%)}
+.login .lbox{max-width:360px;width:100%;text-align:center}
+.login p{font-family:'Frank Ruhl Libre',serif;font-size:21px;margin:14px 0 30px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <div class="logo">Mix<span>&amp;</span>Match</div>
+      <div class="date" id="today-date"></div>
+    </div>
+    <div class="count-pill" id="countPill"><b>0</b> פריטים בארון</div>
+  </header>
+
+  <!-- TODAY -->
+  <section class="view" id="v-today">
+    <div class="ask">
+      <h1 id="greet">בוקר טוב ☀️</h1>
+      <p>מה בא לך ללבוש היום? תגידי במילים שלך.</p>
+      <textarea id="prompt" placeholder="למשל: באלי משהו ספורטיבי בשחור וורוד"></textarea>
+      <div class="chips" id="quick"></div>
+      <button class="go" id="goBtn">תלבישי אותי ✨</button>
+      <button class="inspo-btn" id="inspoBtn">📷 ראיתי לוק שאהבתי – תעשי לי אותו מהארון</button>
+    </div>
+    <div id="aiNote"></div>
+    <div id="results"></div>
+  </section>
+
+  <!-- CLOSET -->
+  <section class="view" id="v-closet">
+    <h2>הארון שלי</h2>
+    <p class="sub" id="closetSub">כל הבגדים שלך במקום אחד</p>
+    <div class="fchips" id="catFilter"></div>
+    <div id="closetBody"></div>
+  </section>
+
+  <!-- LOOKS -->
+  <section class="view" id="v-looks">
+    <h2>לוקים שמורים</h2>
+    <p class="sub">השילובים שאהבת, מוכנים לפעם הבאה</p>
+    <div id="looksBody"></div>
+  </section>
+  <div id="syncNote"></div>
+</div>
+
+<nav class="nav">
+  <div class="bar">
+    <button class="tab" data-v="today"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>היום</button>
+    <button class="tab" data-v="closet"><svg viewBox="0 0 24 24"><path d="M12 6.5a1.8 1.8 0 1 1 1.8-1.8c0 1-1 1.4-1.8 2.2v1.3"/><path d="M12 8.2 3 15.5c-.9.7-.4 2 .7 2h16.6c1.1 0 1.6-1.3.7-2z"/></svg>הארון</button>
+    <button class="fab" id="fab" aria-label="הוספת בגד"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button class="tab" data-v="looks"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>שמורים</button>
+    <button class="tab" id="helpTab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .8-1 1.5v.4"/><path d="M12 17h.01"/></svg>איך זה עובד</button>
+  </div>
+</nav>
+
+<input type="file" id="camIn" accept="image/*" capture="environment" class="hidden">
+<input type="file" id="galIn" accept="image/*" multiple class="hidden">
+<input type="file" id="inspoIn" accept="image/*" class="hidden">
+
+<div class="backdrop" id="backdrop"></div>
+<div class="sheet" id="sheet"></div>
+<div class="modal" id="modal"><div class="box"><p id="modalText"></p><div class="row"><button class="btn ghost" id="modalNo">ביטול</button><button class="btn rose" id="modalYes">כן</button></div></div></div>
+<div class="toast" id="toast"></div>
+
+
+<script>
+(function(){
+"use strict";
+/* ---------- constants ---------- */
+const CATS = {top:'עליון',bottom:'תחתון',dress:'שמלות',outer:'שכבה עליונה',shoes:'נעליים',bag:'תיקים',acc:'אקססוריז'};
+const STYLES = ['ספורטיבי','קז׳ואל','בייסיק','עבודה','אלגנטי','ערב','חוף'];
+const SEASONS = {all:'כל השנה',summer:'קיץ',winter:'חורף'};
+const QUICK = ['ספורטיבי שחור וורוד','יום עבודה, נוח אבל מסודר','קז׳ואל לשישי בבוקר','ערב אלגנטי','דייט','משהו צבעוני ושמח','נוח לטיסה','מה שלא לבשתי מזמן'];
+const LOAD_MSGS = ['פותחת את הארון…','מתאימה צבעים…','בודקת מה לא לבשת מזמן…','מסדרת את הלוקים…'];
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const newId = p => p + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const todayStr = () => new Date().toISOString().slice(0,10);
+
+/* ---------- state ---------- */
+const state = { items:{}, looks:{}, loaded:false };
+let view = 'today', catFilter = 'all';
+let results = null, lastPrompt = '', resultSavedIds = {};
+let pendingCount = 0;
+let sample = null, imgOk = false, aiOff = false;
+let store = null;
+
+/* ---------- garment illustrations (for items without a photo) ---------- */
+const SHAPES = {
+  top:'<path d="M30 18 L42 12 Q50 21 58 12 L70 18 L88 33 L78 47 L70 41 L70 88 L30 88 L30 41 L22 47 L12 33 Z"/>',
+  bottom:'<path d="M29 12 H71 L76 90 H58 L50 38 L42 90 H24 Z"/>',
+  dress:'<path d="M40 10 L44 10 L46 24 H54 L56 10 L60 10 L61 30 L81 90 H19 L39 30 Z"/>',
+  outer:'<path d="M31 14 L43 10 L50 30 L57 10 L69 14 L86 30 L84 80 L73 80 L70 47 L70 90 L30 90 L30 47 L27 80 L16 80 L14 30 Z"/><path d="M50 30 V90" fill="none" stroke="rgba(0,0,0,.25)" stroke-width="1.5"/>',
+  shoes:'<path d="M10 64 Q12 46 24 44 L38 42 Q48 54 64 56 L84 60 Q92 62 92 71 L92 76 H10 Z"/><rect x="10" y="74" width="82" height="6" rx="3" fill="rgba(0,0,0,.18)"/>',
+  bag:'<path d="M36 42 Q36 18 50 18 Q64 18 64 42" fill="none" stroke-width="5"/><path d="M20 42 H80 L74 88 H26 Z"/>',
+  acc:'<path d="M32 62 Q34 32 50 32 Q66 32 68 62 Z"/><path d="M12 64 Q50 54 88 66 Q50 76 12 64 Z"/>'
+};
+function svgFor(cat, hex){
+  hex = /^#[0-9a-f]{6}$/i.test(hex||'') ? hex : '#C9B7AE';
+  const sh = SHAPES[cat] || SHAPES.top;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#FBF7F3"/><g transform="translate(14 14) scale(.72)" fill="${hex}" stroke="${hex}" stroke-opacity=".0"><g stroke="rgba(0,0,0,.28)" stroke-width="1.6" stroke-linejoin="round">${sh}</g></g></svg>`;
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+const imgOf = it => it.img || svgFor(it.cat, it.hex);
+
+/* ---------- storage: private db per user, else this browser ---------- */
+const LS_KEY = 'mixmatch_v1';
+function makeLocalStore(){
+  try { const raw = localStorage.getItem(LS_KEY); if (raw){ const d = JSON.parse(raw); Object.assign(state.items, d.items||{}); Object.assign(state.looks, d.looks||{}); } } catch(e){}
+  state.loaded = true;
+  const save = () => { try { localStorage.setItem(LS_KEY, JSON.stringify({items:state.items,looks:state.looks})); } catch(e){ toast('אין מספיק מקום לשמור בדפדפן הזה'); } };
+  return {
+    mode:'local',
+    async put(id, obj){ (obj.kind==='look'?state.looks:state.items)[id] = {...obj, id}; save(); renderAll(); },
+    async del(id){ delete state.items[id]; delete state.looks[id]; save(); renderAll(); }
+  };
+}
+function openIdb(){ return new Promise((res, rej) => { const r = indexedDB.open('mixmatch', 1); r.onupgradeneeded = () => r.result.createObjectStore('docs'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+async function makeIdbStore(){
+  const db = await openIdb();
+  const os = mode => db.transaction('docs', mode).objectStore('docs');
+  const done = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  await new Promise((res, rej) => { const c = os('readonly').openCursor(); c.onsuccess = () => { const cur = c.result; if (cur){ const v = cur.value; if (v && (v.kind === 'item' || v.kind === 'look')) (v.kind === 'look' ? state.looks : state.items)[cur.key] = {...v, id: cur.key}; cur.continue(); } else res(); }; c.onerror = () => rej(c.error); });
+  state.loaded = true;
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e){}
+  return {
+    mode:'local',
+    async put(id, obj){ const v = {...obj}; delete v.id; try { await done(os('readwrite').put(v, id)); } catch(e){ toast('אין מספיק מקום בטלפון לשמירה'); throw e; } (v.kind === 'look' ? state.looks : state.items)[id] = {...v, id}; renderAll(); },
+    async del(id){ await done(os('readwrite').delete(id)); delete state.items[id]; delete state.looks[id]; renderAll(); }
+  };
+}
+function makeDbStore(db, uid){
+  const col = db.collection('users/' + uid + '/closet');
+  const timer = setTimeout(() => { if (!state.loaded) $('#syncNote').innerHTML = '<div class="note">הארון עוד נטען… אם זה לוקח זמן, בדקי את החיבור לאינטרנט.</div>'; }, 10000);
+  col.onSnapshot(snap => {
+    const items = {}, looks = {};
+    snap.docs.forEach(d => { const v = d.data() || {}; if (v.kind === 'item') items[d.id] = {...v, id:d.id}; else if (v.kind === 'look') looks[d.id] = {...v, id:d.id}; });
+    state.items = items; state.looks = looks;
+    if (!snap.metadata.fromCache){ state.loaded = true; clearTimeout(timer); $('#syncNote').innerHTML = ''; }
+    else state.loaded = true;
+    renderAll();
+  }, err => {
+    clearTimeout(timer);
+    $('#syncNote').innerHTML = '<div class="note warn">לא הצלחתי להתחבר לארון השמור. רענני את הדף בעוד רגע.</div>';
+  });
+  return {
+    mode:'db',
+    async put(id, obj){
+      const clean = {...obj}; delete clean.id;
+      try { await col.doc(id).set(clean); }
+      catch(e){ toast(e && e.code === 'quota_exceeded' ? 'הארון מלא – מחקי כמה פריטים ישנים' : 'השמירה נכשלה, נסי שוב'); throw e; }
+    },
+    async del(id){ try { await col.doc(id).delete(); } catch(e){ toast('המחיקה נכשלה'); } }
+  };
+}
+
+/* ---------- helpers: UI ---------- */
+let toastT;
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('on'), 2600); }
+function confirmBox(text, yes='כן'){
+  return new Promise(res => {
+    $('#modalText').textContent = text; $('#modalYes').textContent = yes; $('#modal').classList.add('on');
+    const done = v => { $('#modal').classList.remove('on'); $('#modalYes').onclick = $('#modalNo').onclick = null; res(v); };
+    $('#modalYes').onclick = () => done(true); $('#modalNo').onclick = () => done(false);
+  });
+}
+function openSheet(html){ $('#sheet').innerHTML = '<div class="grab"></div>' + html; $('#sheet').scrollTop = 0; $('#sheet').classList.add('on'); $('#backdrop').classList.add('on'); }
+function closeSheet(){ $('#sheet').classList.remove('on'); $('#backdrop').classList.remove('on'); }
+$('#backdrop').onclick = closeSheet;
+
+function go(v){ view = v; try{ if (location.hash !== '#'+v) history.replaceState(null,'','#'+v); }catch(e){} renderAll(); window.scrollTo({top:0,behavior:'smooth'}); }
+document.querySelectorAll('.tab[data-v]').forEach(b => b.onclick = () => go(b.dataset.v));
+window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (['today','closet','looks'].includes(h) && h !== view){ view = h; renderAll(); } });
+
+/* ---------- header ---------- */
+(function header(){
+  const d = new Date(), h = d.getHours();
+  $('#today-date').textContent = d.toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'});
+  $('#greet').textContent = h < 12 ? 'בוקר טוב ☀️' : h < 17 ? 'צהריים טובים 🌤️' : h < 21 ? 'ערב טוב 🌙' : 'לילה טוב ✨';
+  $('#quick').innerHTML = QUICK.map(q => `<button class="chip">${esc(q)}</button>`).join('');
+  $('#quick').querySelectorAll('.chip').forEach(c => c.onclick = () => { $('#prompt').value = c.textContent; recommend(); });
+})();
+function seasonNow(){ const m = new Date().getMonth()+1; return m===12||m<=2?'חורף':m<=5?'אביב':m<=9?'קיץ':'סתיו'; }
+
+/* ---------- rendering ---------- */
+function itemsArr(){ return Object.values(state.items).sort((a,b)=>(b.created||0)-(a.created||0)); }
+function renderAll(){
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-'+view));
+  document.querySelectorAll('.tab[data-v]').forEach(t => t.classList.toggle('on', t.dataset.v === view));
+  const n = Object.keys(state.items).length;
+  $('#countPill').innerHTML = `<b>${n}</b> ${n===1?'פריט':'פריטים'} בארון`;
+  if (view === 'today') renderToday();
+  if (view === 'closet') renderCloset();
+  if (view === 'looks') renderLooks();
+}
+
+function renderToday(){
+  const n = Object.keys(state.items).length;
+  let note = '';
+  if (state.loaded && n < 3 && !results){
+    note = `<div class="card empty" style="margin-top:18px"><div class="art">👗</div><h3>בואי נמלא את הארון</h3>
+      <p>צלמי כמה בגדים (חולצות, מכנסיים, נעליים…) ואני כבר אזהה מה כל פריט. אפשר גם לנסות קודם עם ארון לדוגמה.</p>
+      <div class="row"><button class="btn rose" data-act="add">📸 הוספת בגדים</button><button class="btn ghost" data-act="demo">נסי עם ארון לדוגמה</button></div></div>`;
+  }
+  if (aiOff) note += '<div class="note warn">ההמלצות החכמות לא זמינות כרגע, אז אני משלבת לפי צבעים וסגנון בלבד.</div>';
+  $('#aiNote').innerHTML = note;
+  bindActs($('#aiNote'));
+  if (results && results.looks) renderResults();
+}
+
+/* ---------- dressed figure (try-on preview) ---------- */
+const SKINS = ['#F5D9C4','#E6BA9A','#C99069','#8E5B3F'];
+let skin = (() => { try { return localStorage.getItem('mm_skin') || SKINS[1]; } catch(e){ return SKINS[1]; } })();
+let figN = 0;
+const FIG = {
+  top:{d:'M66 86 Q100 76 134 86 L147 121 L132 127 L128 113 L126 160 Q125 185 128 202 L72 202 Q75 185 74 160 L72 113 L68 127 L53 121 Z', b:[53,78,94,124]},
+  pants:{d:'M72 196 L128 196 L131 234 L124 402 L104 402 L100 252 L96 402 L76 402 L69 234 Z', b:[69,196,62,206]},
+  skirt:{d:'M72 196 L128 196 L143 302 Q100 312 57 302 Z', b:[57,196,86,112]},
+  shorts:{d:'M72 196 L128 196 L135 264 L103 264 L100 242 L97 264 L65 264 Z', b:[65,196,70,68]},
+  dress:{d:'M74 86 Q100 80 126 86 L127 150 Q124 175 128 198 L148 322 Q100 334 52 322 L72 198 Q76 175 73 150 Z', b:[52,80,96,254]},
+  outerL:{d:'M64 85 L95 85 L93 218 L70 218 L72 118 L62 198 L47 194 Q53 122 64 85 Z', b:[47,85,48,133]},
+  outerR:{d:'M136 85 L105 85 L107 218 L130 218 L128 118 L138 198 L153 194 Q147 122 136 85 Z', b:[105,85,48,133]},
+  shoeL:{d:'M76 398 L96 398 L98 415 Q85 419 69 415 Z', b:[69,398,29,21]},
+  shoeR:{d:'M104 398 L124 398 L131 415 Q115 419 102 415 Z', b:[102,398,29,21]},
+  bag:{d:'M139 196 H167 Q169 196 169 199 L167 221 H141 L139 199 Q139 196 139 196 Z', b:[139,196,30,25]},
+  hat:{d:'M73 36 Q76 6 100 6 Q124 6 127 36 Z M62 36 Q100 26 138 36 Q100 44 62 36 Z', b:[62,6,76,38]}
+};
+function figureSvg(ids){
+  const its = ids.map(id => state.items[id]).filter(Boolean);
+  const pick = c => its.find(i => i.cat === c);
+  const dress = pick('dress'), top = pick('top'), bottom = pick('bottom'), outer = pick('outer'), shoes = pick('shoes'), bag = pick('bag');
+  const hat = its.find(i => i.cat === 'acc' && /כובע/.test(i.name||''));
+  const uid = 'f' + (++figN);
+  let defs = '', body = '';
+  const fill = (it, key) => {
+    const z = FIG[key];
+    if (it.img){
+      const [x,y,w,h] = z.b, pid = uid + key;
+      defs += `<pattern id="${pid}" patternUnits="userSpaceOnUse" x="${x}" y="${y}" width="${w}" height="${h}"><image href="${esc(it.img)}" x="${-w*0.35}" y="${-h*0.35}" width="${w*1.7}" height="${h*1.7}" preserveAspectRatio="xMidYMid slice"/></pattern>`;
+      return `url(#${pid})`;
+    }
+    return /^#[0-9a-f]{6}$/i.test(it.hex||'') ? it.hex : (COLOR_HEX[(it.colors||[])[0]] || '#C9B7AE');
+  };
+  const piece = (it, key) => `<path d="${FIG[key].d}" fill="${fill(it,key)}" stroke="rgba(0,0,0,.22)" stroke-width="1.2" stroke-linejoin="round"/><path d="${FIG[key].d}" fill="url(#${uid}sh)"/>`;
+  defs += `<linearGradient id="${uid}sh" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity=".16"/><stop offset=".45" stop-color="#fff" stop-opacity=".08"/><stop offset="1" stop-color="#000" stop-opacity=".18"/></linearGradient>`;
+  const S = skin, hair = '#3B2A22';
+  // hair back, limbs, torso
+  body += `<path d="M75 52 Q72 18 100 19 Q128 18 125 52 L129 100 Q114 92 112 72 L88 72 Q86 92 71 100 Z" fill="${hair}"/>`;
+  body += `<g fill="${S}"><path d="M80 226 L78 402 L95 402 L100 240 Z"/><path d="M120 226 L122 402 L105 402 L100 240 Z"/>
+    <path d="M65 92 Q52 140 50 196 L60 198 Q66 150 77 104 Z"/><path d="M135 92 Q148 140 150 196 L140 198 Q134 150 123 104 Z"/>
+    <circle cx="55" cy="203" r="6.5"/><circle cx="145" cy="203" r="6.5"/>
+    <path d="M70 86 Q100 78 130 86 L126 150 Q124 190 128 234 L72 234 Q76 190 74 150 Z"/><rect x="92" y="62" width="16" height="22" rx="6"/></g>`;
+  if (dress) body += piece(dress, 'dress');
+  else {
+    if (bottom){ const n = bottom.name||''; body += piece(bottom, /חצאית/.test(n) ? 'skirt' : /שורט|ברמודה/.test(n) ? 'shorts' : 'pants'); }
+    if (top) body += piece(top, 'top');
+  }
+  if (shoes){ body += piece(shoes,'shoeL') + piece(shoes,'shoeR'); }
+  else body += `<g fill="${S}"><ellipse cx="86" cy="406" rx="10" ry="5"/><ellipse cx="114" cy="406" rx="10" ry="5"/></g>`;
+  if (outer){ body += piece(outer,'outerL') + piece(outer,'outerR'); }
+  body += `<circle cx="100" cy="47" r="22" fill="${S}"/><path d="M78 44 Q80 22 100 23 Q120 22 122 44 Q110 33 100 34 Q88 33 78 44 Z" fill="${hair}"/>`;
+  if (hat) body += piece(hat, 'hat');
+  if (bag) body += `<path d="M128 90 L152 196" stroke="${bag.img ? '#5a4a44' : (bag.hex||'#5a4a44')}" stroke-width="2.2" fill="none"/>` + piece(bag, 'bag');
+  return `<svg class="fig" viewBox="40 0 135 425" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="הדמיה של הלוק"><defs>${defs}</defs>${body}</svg>`;
+}
+function skinPicker(){
+  return `<div class="skins"><span>גוון עור בהדמיה</span>${SKINS.map(s => `<button class="sw ${s===skin?'on':''}" data-skin="${s}" style="background:${s}" aria-label="גוון"></button>`).join('')}</div>`;
+}
+function bindSkins(root){
+  root.querySelectorAll('[data-skin]').forEach(b => b.onclick = () => { skin = b.dataset.skin; try{ localStorage.setItem('mm_skin', skin); }catch(e){} renderAll(); });
+}
+
+function tileHtml(it){ return `<div class="tile"><img src="${esc(imgOf(it))}" alt=""><div class="lbl">${esc(it.name)}</div></div>`; }
+function lookHtml(lk, idx, saved){
+  const its = (lk.items||[]).map(id => state.items[id]).filter(Boolean);
+  if (!its.length) return '';
+  const k = Math.min(its.length, 6);
+  return `<article class="look">
+    <div class="duo"><div class="stage">${figureSvg(lk.items||[])}</div>
+    <div class="collage n${k}">${its.slice(0,6).map(tileHtml).join('')}</div></div>
+    <div class="body">
+      <h3>${esc(lk.title || 'הלוק שלך')}</h3>
+      ${lk.why ? `<p class="why">${esc(lk.why)}</p>` : ''}
+      ${lk.tip ? `<div class="tip">💡 ${esc(lk.tip)}</div>` : ''}
+      ${lk.missing ? `<div class="miss">🛍️ מה היה מושלם כאן: ${esc(lk.missing)}</div>` : ''}
+      <div class="acts">
+        ${saved ? `<button class="btn ghost sm" data-unsave="${esc(lk.id)}">הסרה</button>`
+                : `<button class="btn sm ${resultSavedIds[idx]?'saved':'ghost'}" data-save="${idx}">${resultSavedIds[idx]?'♥ נשמר':'♡ שמירה'}</button>`}
+        <button class="btn sm" data-wear="${esc((lk.items||[]).join(','))}">👗 לובשת את זה</button>
+      </div>
+    </div></article>`;
+}
+function renderResults(){
+  const r = results;
+  let html = '';
+  if (r.note || r.inspo) html += `<div class="resnote">${r.inspo ? `<img class="insimg" src="${esc(r.inspo)}" alt="">` : ''}${esc(r.note)}</div>`;
+  html += skinPicker();
+  html += r.looks.map((lk,i) => lookHtml(lk,i,false)).join('');
+  if (!r.inspo) html += `<button class="btn ghost more" id="moreBtn">🔄 עוד אפשרויות</button>`;
+  $('#results').innerHTML = html;
+  bindLookActs($('#results')); bindSkins($('#results'));
+  if ($('#moreBtn')) $('#moreBtn').onclick = () => recommend(true);
+}
+function bindLookActs(root){
+  root.querySelectorAll('[data-save]').forEach(b => b.onclick = async () => {
+    const i = +b.dataset.save; if (resultSavedIds[i]) return;
+    const lk = results.looks[i], id = newId('l');
+    resultSavedIds[i] = id;
+    try { await store.put(id, {kind:'look', title:lk.title||'', why:lk.why||'', tip:lk.tip||'', missing:lk.missing||'', items:lk.items, prompt:lastPrompt, created:Date.now()}); toast('נשמר בלוקים שלך ♥'); }
+    catch(e){ delete resultSavedIds[i]; }
+    renderResults();
+  });
+  root.querySelectorAll('[data-unsave]').forEach(b => b.onclick = async () => { await store.del(b.dataset.unsave); toast('הלוק הוסר'); });
+  root.querySelectorAll('[data-wear]').forEach(b => b.onclick = async () => {
+    const ids = b.dataset.wear.split(',').filter(id => state.items[id]); const d = todayStr();
+    b.disabled = true;
+    await Promise.all(ids.map(id => store.put(id, {...state.items[id], lastWorn:d}).catch(()=>{})));
+    toast('תתחדשי! סימנתי שלבשת את זה היום 💃');
+  });
+}
+
+function renderCloset(){
+  const all = itemsArr();
+  const counts = {}; all.forEach(it => counts[it.cat] = (counts[it.cat]||0)+1);
+  const cats = [['all','הכל',all.length], ...Object.entries(CATS).filter(([k]) => counts[k]).map(([k,v]) => [k,v,counts[k]])];
+  if (catFilter !== 'all' && !counts[catFilter]) catFilter = 'all';
+  $('#catFilter').innerHTML = all.length ? cats.map(([k,v,c]) => `<button class="fchip ${catFilter===k?'on':''}" data-cat="${k}">${v}<small>${c}</small></button>`).join('') : '';
+  $('#catFilter').querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { catFilter = b.dataset.cat; renderCloset(); });
+  const list = catFilter === 'all' ? all : all.filter(it => it.cat === catFilter);
+  const body = $('#closetBody');
+  if (!state.loaded){ body.innerHTML = '<div class="loader"><div class="spin" style="margin:0 auto"></div></div>'; return; }
+  if (!all.length && !pendingCount){
+    body.innerHTML = `<div class="card empty"><div class="art">🧺</div><h3>הארון עוד ריק</h3><p>לחצי על ה־+ למטה וצלמי בגד – אני אזהה לבד מה הוא, באיזה צבע ובאיזה סגנון.</p>
+      <div class="row"><button class="btn rose" data-act="add">📸 הוספת בגדים</button><button class="btn ghost" data-act="demo">ארון לדוגמה</button></div></div>`;
+    bindActs(body); return;
+  }
+  let html = '<div class="grid">';
+  for (let i=0;i<pendingCount;i++) html += '<div class="item pending"><div class="ph"><div class="spin"></div></div><div class="nm" style="color:var(--mute)">מזהה את הבגד…</div></div>';
+  html += list.map(it => `<button class="item" data-edit="${esc(it.id)}"><div class="ph"><img src="${esc(imgOf(it))}" alt="" loading="lazy"></div><div class="nm">${esc(it.name||'פריט')}</div>${it.demo?'<span class="demo">דוגמה</span>':''}</button>`).join('');
+  html += '</div>';
+  const hasDemo = all.some(it => it.demo);
+  html += `<div class="closet-actions"><span class="sub" style="margin:0">לחיצה על פריט לעריכה</span>${hasDemo?'<button class="linkbtn" data-act="cleardemo">הסרת פריטי הדוגמה</button>':''}</div>`;
+  body.innerHTML = html;
+  body.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => openEdit(b.dataset.edit));
+  bindActs(body);
+}
+
+function renderLooks(){
+  const looks = Object.values(state.looks).sort((a,b)=>(b.created||0)-(a.created||0));
+  const body = $('#looksBody');
+  if (!looks.length){
+    body.innerHTML = `<div class="card empty"><div class="art">💗</div><h3>עוד אין לוקים שמורים</h3><p>כשתקבלי לוק שאת אוהבת, לחצי על "שמירה" והוא יחכה לך כאן.</p><button class="btn rose" data-go="today">למסך ההמלצות</button></div>`;
+    body.querySelector('[data-go]').onclick = () => go('today'); return;
+  }
+  body.innerHTML = skinPicker() + (looks.map(lk => lookHtml(lk, 0, true)).join('') || '<div class="note">הפריטים של הלוקים השמורים כבר לא בארון.</div>');
+  bindLookActs(body); bindSkins(body);
+}
+
+function bindActs(root){
+  root.querySelectorAll('[data-act]').forEach(b => b.onclick = () => {
+    const a = b.dataset.act;
+    if (a === 'add') openAdd();
+    if (a === 'demo') loadDemo();
+    if (a === 'cleardemo') clearDemo();
+  });
+}
+
+/* ---------- add flow ---------- */
+$('#fab').onclick = openAdd;
+function openAdd(){
+  openSheet(`<h3>הוספת בגדים לארון</h3><p class="sub" style="margin:0">טיפ: צלמי כל פריט לבד, על רקע חלק (מיטה, רצפה או קיר).</p>
+    <button class="big-opt" id="optCam"><div class="ic">📸</div><div><b>צילום עכשיו</b><span>פריט אחד בכל פעם</span></div></button>
+    <button class="big-opt" id="optGal"><div class="ic">🖼️</div><div><b>בחירה מהגלריה</b><span>אפשר לבחור הרבה תמונות ביחד</span></div></button>
+    <button class="big-opt" id="optMan"><div class="ic">✍️</div><div><b>הוספה בלי תמונה</b><span>רק שם, סוג וצבע</span></div></button>
+    ${!imgOk ? '<div class="note">זיהוי אוטומטי מתמונה לא זמין כרגע – אחרי הצילום תמלאי פרטים בעצמך.</div>' : ''}`);
+  $('#optCam').onclick = () => $('#camIn').click();
+  $('#optGal').onclick = () => $('#galIn').click();
+  $('#optMan').onclick = () => openEdit(null);
+}
+['#camIn','#galIn'].forEach(s => $(s).onchange = e => { const f = [...e.target.files]; e.target.value = ''; if (f.length) handleFiles(f); });
+
+function loadImage(file){
+  return new Promise((res, rej) => { const u = URL.createObjectURL(file); const im = new Image(); im.onload = () => { res(im); setTimeout(()=>URL.revokeObjectURL(u), 1000); }; im.onerror = () => rej(new Error('img')); im.src = u; });
+}
+function drawScaled(im, max){
+  const s = Math.min(1, max / Math.max(im.naturalWidth, im.naturalHeight));
+  const c = document.createElement('canvas'); c.width = Math.round(im.naturalWidth*s); c.height = Math.round(im.naturalHeight*s);
+  const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0,0,c.width,c.height); g.drawImage(im,0,0,c.width,c.height); return c;
+}
+async function prepPhoto(file){
+  const im = await loadImage(file);
+  let q = .76, c = drawScaled(im, 560), url = c.toDataURL('image/jpeg', q);
+  while (url.length > 170000 && q > .4){ q -= .1; url = c.toDataURL('image/jpeg', q); }
+  const big = drawScaled(im, 1024);
+  const blob = await new Promise(r => big.toBlob(r, 'image/jpeg', .85));
+  return {url, blob};
+}
+
+/* AI prompts live on the server: functions/index.js */
+
+function normalizeItem(meta, img){
+  meta = meta || {};
+  const cat = CATS[meta.cat] ? meta.cat : 'top';
+  const colors = Array.isArray(meta.colors) ? meta.colors.map(String).slice(0,4) : [];
+  const style = Array.isArray(meta.style) ? meta.style.map(s => String(s).replace("'", '׳')).filter(s => STYLES.includes(s)) : [];
+  return { kind:'item', name: String(meta.name || CATS[cat]).slice(0,60), cat, colors, hex: /^#[0-9a-f]{6}$/i.test(meta.hex||'') ? meta.hex : '', style, season: SEASONS[meta.season] ? meta.season : 'all', img: img || '', created: Date.now(), lastWorn: '' };
+}
+
+async function handleFiles(files){
+  closeSheet(); go('closet');
+  pendingCount += files.length; renderCloset();
+  let added = 0, manualId = null;
+  for (const f of files){
+    try {
+      const {url, blob} = await prepPhoto(f);
+      let meta = null;
+      if (sample && imgOk && !aiOff){
+        try { meta = await ai({action:'tag', image: await blobToB64(blob)}); }
+        catch(e){ sampleErr(e, true); }
+      }
+      if (meta && meta.cat === 'none'){ toast('לא זיהיתי בגד באחת התמונות'); }
+      else {
+        const id = newId('i'); const it = normalizeItem(meta, url);
+        if (!meta) it.name = 'פריט חדש';
+        await store.put(id, it); added++;
+        if (!meta && files.length === 1) manualId = id;
+      }
+    } catch(e){ toast('לא הצלחתי לקרוא אחת התמונות'); }
+    pendingCount--; renderCloset();
+  }
+  if (added) toast(added === 1 ? 'הפריט נוסף לארון ✨' : `${added} פריטים נוספו לארון ✨`);
+  if (manualId) setTimeout(() => openEdit(manualId), 300);
+}
+
+/* ---------- edit sheet ---------- */
+function openEdit(id){
+  const it = id ? {...state.items[id]} : normalizeItem({name:''}, '');
+  if (id && !state.items[id]) return;
+  let sel = {cat: it.cat, style: new Set(it.style||[]), season: it.season||'all'};
+  openSheet(`<h3>${id?'עריכת פריט':'פריט חדש'}</h3>
+    <div class="edit-ph"><img id="edImg" src="${esc(imgOf(it))}" alt=""></div>
+    <div class="field"><label>שם</label><input type="text" id="edName" value="${esc(it.name)}" placeholder="למשל: חולצת טי לבנה"></div>
+    <div class="field"><label>סוג</label><div class="pick" id="edCat">${Object.entries(CATS).map(([k,v])=>`<button class="fchip" data-k="${k}">${v}</button>`).join('')}</div></div>
+    <div class="field"><label>צבעים (מופרדים בפסיק)</label><input type="text" id="edColors" value="${esc((it.colors||[]).join(', '))}" placeholder="שחור, ורוד"></div>
+    <div class="field"><label>סגנון</label><div class="pick" id="edStyle">${STYLES.map(s=>`<button class="fchip" data-k="${s}">${s}</button>`).join('')}</div></div>
+    <div class="field"><label>עונה</label><div class="pick" id="edSeason">${Object.entries(SEASONS).map(([k,v])=>`<button class="fchip" data-k="${k}">${v}</button>`).join('')}</div></div>
+    ${it.lastWorn ? `<p class="sub" style="margin:14px 0 0">נלבש לאחרונה: ${new Date(it.lastWorn).toLocaleDateString('he-IL')}</p>` : ''}
+    <div class="sheet-acts">${id?'<button class="btn danger" id="edDel">מחיקה</button>':''}<button class="btn rose" id="edSave">שמירה</button></div>`);
+  const paint = () => {
+    $('#edCat').querySelectorAll('.fchip').forEach(b => b.classList.toggle('on', b.dataset.k === sel.cat));
+    $('#edStyle').querySelectorAll('.fchip').forEach(b => b.classList.toggle('on', sel.style.has(b.dataset.k)));
+    $('#edSeason').querySelectorAll('.fchip').forEach(b => b.classList.toggle('on', b.dataset.k === sel.season));
+    if (!it.img) $('#edImg').src = svgFor(sel.cat, it.hex);
+  };
+  $('#edCat').onclick = e => { const b = e.target.closest('.fchip'); if (b){ sel.cat = b.dataset.k; paint(); } };
+  $('#edStyle').onclick = e => { const b = e.target.closest('.fchip'); if (b){ const k = b.dataset.k; sel.style.has(k)?sel.style.delete(k):sel.style.add(k); paint(); } };
+  $('#edSeason').onclick = e => { const b = e.target.closest('.fchip'); if (b){ sel.season = b.dataset.k; paint(); } };
+  paint();
+  $('#edSave').onclick = async () => {
+    const name = $('#edName').value.trim() || CATS[sel.cat];
+    const colors = $('#edColors').value.split(/[,،]/).map(s=>s.trim()).filter(Boolean).slice(0,4);
+    let hex = it.hex;
+    if (!it.img && colors[0]) hex = COLOR_HEX[colors[0]] || hex;
+    const out = {...it, name, cat: sel.cat, colors, style:[...sel.style], season: sel.season, hex};
+    delete out.id;
+    $('#edSave').disabled = true;
+    try { await store.put(id || newId('i'), out); closeSheet(); toast('נשמר ✓'); } catch(e){ $('#edSave').disabled = false; }
+  };
+  if (id) $('#edDel').onclick = async () => { if (await confirmBox('למחוק את הפריט מהארון?', 'מחיקה')){ await store.del(id); closeSheet(); toast('הפריט נמחק'); } };
+}
+
+/* ---------- demo closet ---------- */
+const COLOR_HEX = {'שחור':'#1E1C1E','לבן':'#F7F5F2','ורוד':'#F08BB0','אדום':'#C8323F','כחול':'#3B5B8C','תכלת':'#A9C7E8','ירוק':'#4E8A5B','זית':'#6B7A3E','צהוב':'#F2C94C','בז׳':'#D8C3A5','בז\'':'#D8C3A5','חום':'#8B5A3C','אפור':'#9A9A9E','סגול':'#8A5DB0','כתום':'#EE8A3C','שמנת':'#EFE6D6','בורדו':'#7A1F35','נייבי':'#22314F','זהב':'#C9A24B','כסף':'#C0C0C8'};
+const DEMO = [
+  ['טייץ שחור ספורטיבי','bottom',['שחור'],'#1E1C1E',['ספורטיבי'],'all'],
+  ['גופיית ספורט ורודה','top',['ורוד'],'#F08BB0',['ספורטיבי'],'summer'],
+  ['קפוצ׳ון אפור','outer',['אפור'],'#9A9A9E',['ספורטיבי','קז׳ואל'],'winter'],
+  ['סניקרס לבנות','shoes',['לבן'],'#F4F2EE',['ספורטיבי','קז׳ואל','בייסיק'],'all'],
+  ['ג׳ינס כחול בגזרה ישרה','bottom',['כחול'],'#3B5B8C',['קז׳ואל','בייסיק'],'all'],
+  ['חולצת טי לבנה','top',['לבן'],'#F7F5F2',['בייסיק','קז׳ואל'],'all'],
+  ['חולצה מכופתרת תכלת','top',['תכלת'],'#A9C7E8',['עבודה'],'all'],
+  ['מכנסי חליפה בז׳','bottom',['בז׳'],'#D8C3A5',['עבודה','אלגנטי'],'all'],
+  ['בלייזר שחור','outer',['שחור'],'#262326',['עבודה','אלגנטי'],'all'],
+  ['שמלת מידי ירוק זית','dress',['זית'],'#6B7A3E',['אלגנטי','ערב'],'all'],
+  ['שמלה פרחונית קלילה','dress',['אפרסק','ורוד'],'#F2B8A0',['קז׳ואל','חוף'],'summer'],
+  ['נעלי עקב שחורות','shoes',['שחור'],'#151315',['אלגנטי','ערב'],'all'],
+  ['סנדלים חומות','shoes',['חום'],'#8B5A3C',['קז׳ואל','חוף'],'summer'],
+  ['תיק צד ורוד עתיק','bag',['ורוד'],'#D99AA5',['קז׳ואל','ערב'],'all'],
+  ['תיק טוט שחור','bag',['שחור'],'#2A2729',['עבודה','בייסיק'],'all'],
+  ['ג׳קט ג׳ינס','outer',['כחול'],'#5D7FB0',['קז׳ואל'],'all'],
+  ['חצאית סאטן שחורה','bottom',['שחור'],'#1A181A',['ערב','אלגנטי'],'all'],
+  ['סוודר סרוג שמנת','top',['שמנת'],'#EFE6D6',['קז׳ואל'],'winter'],
+  ['כובע מצחייה ורוד','acc',['ורוד'],'#F3A6C0',['ספורטיבי'],'all']
+];
+async function loadDemo(){
+  const t = Date.now();
+  toast('מוסיפה ארון לדוגמה…');
+  for (let i=0;i<DEMO.length;i++){
+    const [name,cat,colors,hex,style,season] = DEMO[i];
+    try { await store.put('i_demo'+i, {kind:'item', name, cat, colors, hex, style, season, img:'', created:t-i, lastWorn:'', demo:true}); } catch(e){ break; }
+  }
+  toast('הארון לדוגמה מוכן – נסי לבקש לוק!');
+  go('today');
+}
+async function clearDemo(){
+  if (!await confirmBox('להסיר את כל פריטי הדוגמה מהארון?', 'הסרה')) return;
+  for (const it of itemsArr().filter(x => x.demo)) await store.del(it.id);
+  toast('פריטי הדוגמה הוסרו');
+}
+
+/* ---------- recommendations ---------- */
+let reqCtl = null, msgT = null;
+$('#goBtn').onclick = () => recommend(false);
+$('#prompt').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); recommend(false); } });
+
+/* inspiration: screenshot → same look from the closet */
+$('#inspoBtn').onclick = () => {
+  if (itemsArr().length < 2){ toast('קודם צריך כמה פריטים בארון 🙂'); return; }
+  if (!imgOk || aiOff){ toast('ניתוח תמונות לא זמין כרגע'); return; }
+  $('#inspoIn').click();
+};
+$('#inspoIn').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  let blob, url;
+  try { const p = await prepPhoto(f); blob = p.blob; url = p.url; } catch(err){ toast('לא הצלחתי לקרוא את התמונה'); return; }
+  lastPrompt = 'לפי תמונת השראה'; resultSavedIds = {};
+  $('#goBtn').disabled = true; showLoader();
+  reqCtl = new AbortController();
+  try {
+    const out = await ai({action:'inspo', image: await blobToB64(blob), season:seasonNow(), date:todayStr(),
+          closet: itemsArr().map(it => ({id:it.id, name:it.name, cat:it.cat, colors:it.colors||[], style:it.style||[], season:it.season||'all', lastWorn:it.lastWorn||''}))}, reqCtl.signal);
+    results = cleanResults(out); results.inspo = url;
+    if (!results.looks.length){ $('#results').innerHTML = '<div class="note">לא מצאתי בארון משהו קרוב ללוק הזה. אולי זה הזמן לקנייה קטנה 😉</div>'; results = null; }
+    else { renderToday(); $('#results').scrollIntoView({behavior:'smooth', block:'start'}); }
+  } catch(err){ sampleErr(err); $('#results').innerHTML = ''; results = null; }
+  finally { clearInterval(msgT); reqCtl = null; $('#goBtn').disabled = false; }
+};
+
+function sampleErr(e, silentToast){
+  let c = e && e.code;
+  if (c === 'functions/resource-exhausted' || c === 'resource-exhausted') c = 'rate_limited';
+  else if (c === 'functions/unauthenticated') c = 'session_expired';
+  if (['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(c)){ aiOff = true; return 'off'; }
+  if (c === 'images_unavailable'){ imgOk = false; return 'img'; }
+  if (c === 'cancelled') return 'cancel';
+  const m = c === 'rate_limited' ? 'יותר מדי בקשות כרגע – נסי שוב בעוד דקה' : c === 'session_expired' ? 'צריך להתחבר מחדש ל-Claude' : c === 'image_rejected' ? 'התמונה לא התקבלה – נסי תמונה אחרת' : 'משהו השתבש – נסי שוב';
+  toast(m); return 'err';
+}
+
+async function recommend(more){
+  const req = ($('#prompt').value.trim() || (more ? lastPrompt : '')) || 'משהו יפה ונוח להיום';
+  const items = itemsArr();
+  if (items.length < 2){ toast('צריך לפחות כמה פריטים בארון 🙂'); if (!items.length) openAdd(); return; }
+  lastPrompt = req; resultSavedIds = {};
+  const avoid = more && results && results.looks ? results.looks.map(l => '[' + l.items.join(',') + ']').join(' ') : '';
+  $('#goBtn').disabled = true;
+  showLoader();
+  try {
+    let out = null;
+    if (sample && !aiOff){
+      reqCtl = new AbortController();
+      try {
+        out = await ai({action:'recommend', request:req, avoid, season:seasonNow(), date:todayStr(),
+          closet: itemsArr().map(it => ({id:it.id, name:it.name, cat:it.cat, colors:it.colors||[], style:it.style||[], season:it.season||'all', lastWorn:it.lastWorn||''}))}, reqCtl.signal);
+      } catch(e){
+        const k = sampleErr(e);
+        if (k === 'cancel'){ $('#results').innerHTML = ''; results = null; return; }
+        if (k !== 'off'){ $('#results').innerHTML = ''; results = null; return; }
+      }
+    }
+    if (!out) out = fallbackRecommend(req, avoid);
+    results = cleanResults(out);
+    if (!results.looks.length){
+      $('#results').innerHTML = '<div class="note">לא מצאתי שילוב מתאים מהארון. נסי לנסח אחרת או להוסיף עוד בגדים.</div>'; results = null;
+    } else { renderToday(); $('#results').scrollIntoView({behavior:'smooth', block:'start'}); }
+  } finally {
+    clearInterval(msgT); reqCtl = null; $('#goBtn').disabled = false;
+  }
+}
+function showLoader(){
+  const hanger = '<svg viewBox="0 0 48 48" fill="none" stroke="#C8466E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M24 14a3.5 3.5 0 1 1 3.5-3.5c0 1.8-1.8 2.6-3.5 4V17"/><path d="M24 17 6 31c-1.6 1.2-.8 3.5 1.2 3.5h33.6c2 0 2.8-2.3 1.2-3.5z"/></svg>';
+  $('#results').innerHTML = `<div class="loader"><div class="hangers">${hanger}${hanger}${hanger}</div><div class="msg" id="ldMsg">${LOAD_MSGS[0]}</div>${sample && !aiOff ? '<button class="btn ghost sm stop" id="stopBtn">עצירה</button>' : ''}</div>`;
+  let i = 0; clearInterval(msgT);
+  msgT = setInterval(() => { i = (i+1) % LOAD_MSGS.length; const m = $('#ldMsg'); if (m) m.textContent = LOAD_MSGS[i]; }, 2600);
+  const sb = $('#stopBtn'); if (sb) sb.onclick = () => reqCtl && reqCtl.abort();
+  $('#results').scrollIntoView({behavior:'smooth', block:'center'});
+}
+function cleanResults(out){
+  const looks = (out && Array.isArray(out.looks) ? out.looks : []).map(l => {
+    const ids = [...new Set((l.item_ids || l.items || []).map(String))].filter(id => state.items[id]);
+    return {title: String(l.title||''), why: String(l.why||''), tip: String(l.tip||''), missing: String(l.missing||''), items: ids};
+  }).filter(l => l.items.length >= 2 || (l.items.length === 1 && state.items[l.items[0]].cat === 'dress'));
+  return {note: String((out && out.note) || ''), looks: looks.slice(0,4)};
+}
+
+/* simple offline matcher: colors + style words */
+function fallbackRecommend(req, avoid){
+  const r = req.replace(/'/g,'׳');
+  const colorWords = Object.keys(COLOR_HEX).filter(c => r.includes(c.replace("'",'׳')));
+  const syn = {'ספורט':'ספורטיבי','אימון':'ספורטיבי','אלגנט':'אלגנטי','ערב':'ערב','מסיבה':'ערב','דייט':'ערב','עבודה':'עבודה','משרד':'עבודה','ים':'חוף','חוף':'חוף','נוח':'קז׳ואל','קז':'קז׳ואל','יומיומי':'בייסיק'};
+  const styles = [...new Set(Object.entries(syn).filter(([k]) => r.includes(k)).map(([,v]) => v))];
+  const score = it => {
+    let s = Math.random()*0.6;
+    colorWords.forEach(c => { if ((it.colors||[]).some(x => x.includes(c)) || (it.name||'').includes(c)) s += 3; });
+    styles.forEach(st => { if ((it.style||[]).includes(st)) s += 2.5; });
+    if (it.lastWorn && (Date.now() - new Date(it.lastWorn)) < 3*864e5) s -= 1.5;
+    return s;
+  };
+  const by = cat => itemsArr().filter(it => it.cat === cat).map(it => [score(it), it]).sort((a,b) => b[0]-a[0]).map(x => x[1]);
+  const tops = by('top'), bottoms = by('bottom'), dresses = by('dress'), shoes = by('shoes'), outers = by('outer'), bags = by('bag');
+  const looks = [];
+  for (let i=0;i<3;i++){
+    const ids = [];
+    if (dresses[i] && (i === 1 || !tops[i] || !bottoms[i])) ids.push(dresses[i].id);
+    else if (tops[i % (tops.length||1)] && bottoms[i % (bottoms.length||1)]) ids.push(tops[i % tops.length].id, bottoms[i % bottoms.length].id);
+    else continue;
+    if (shoes.length) ids.push(shoes[i % shoes.length].id);
+    if (outers.length && (styles.includes('עבודה') || seasonNow() !== 'קיץ')) ids.push(outers[i % outers.length].id);
+    if (bags.length) ids.push(bags[i % bags.length].id);
+    const key = ids.join(',');
+    if (!looks.some(l => l.item_ids.join(',') === key)) looks.push({title: ['הלוק של היום','אפשרות נוספת','משהו קצת אחר'][i], item_ids: ids, why: 'שילוב לפי הצבעים והסגנון שביקשת.', tip:'', missing:''});
+  }
+  return {note:'', looks};
+}
+
+/* ---------- help ---------- */
+$('#helpTab').onclick = () => openSheet(`<h3>איך זה עובד</h3>
+  <div class="big-opt" style="cursor:default"><div class="ic">1</div><div><b>ממלאים את הארון</b><span>מצלמים כל בגד בנפרד. האפליקציה מזהה לבד סוג, צבע וסגנון – ואפשר לתקן.</span></div></div>
+  <div class="big-opt" style="cursor:default"><div class="ic">2</div><div><b>בבוקר מבקשים לוק</b><span>כותבים במילים שלך: "באלי משהו ספורטיבי שחור וורוד" ומקבלים 3 שילובים מהארון שלך.</span></div></div>
+  <div class="big-opt" style="cursor:default"><div class="ic">3</div><div><b>שומרים ולובשים</b><span>שומרים לוקים שאהבת, ו"לובשת את זה" מסמן מה נלבש – כדי שבפעם הבאה תקבלי גיוון.</span></div></div>
+  <div class="note">${'🔒 הארון שלך נשמר רק בטלפון הזה – שום תמונה לא נשמרת בשרת. כדאי לפתוח תמיד מאותו מכשיר ודפדפן.'}</div>
+  <button class="btn rose" style="width:100%;justify-content:center;margin-top:6px" id="helpOk">יאללה</button>
+`) || ($('#helpOk').onclick = closeSheet);
+
+/* ---------- boot ---------- */
+function blobToB64(blob){ return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); }); }
+async function ai(payload, signal){
+  if (!window.MM_API_URL) throw {code:'not_granted'};
+  let r;
+  try { r = await fetch(window.MM_API_URL, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload), signal}); }
+  catch(e){ throw {code: e && e.name === 'AbortError' ? 'cancelled' : 'upstream_error'}; }
+  if (r.status === 429) throw {code:'rate_limited'};
+  if (!r.ok) throw {code:'upstream_error'};
+  return r.json();
+}
+const h0 = location.hash.slice(1); if (['today','closet','looks'].includes(h0)) view = h0;
+renderAll();
+sample = window.MM_API_URL ? {} : null; imgOk = !!sample; aiOff = !sample;
+(async () => {
+  try { store = await makeIdbStore(); } catch(e){ store = makeLocalStore(); }
+  renderAll();
+})();
+})();
+</script>
+</body>
+</html>

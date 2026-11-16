@@ -1,0 +1,8 @@
+name = "mix-and-match-api"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+
+[vars]
+PROVIDER = "gemini"
+ALLOWED_ORIGINS = "https://yonifluk.github.io"
+DAILY_LIMIT = "40"
