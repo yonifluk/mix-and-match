@@ -1,8 +1,18 @@
+# Deployed automatically by Cloudflare Workers Builds on every push to main.
+# The API key is a Secret set in the Cloudflare dashboard (never in this file).
 name = "mix-and-match-api"
 main = "worker.js"
 compatibility_date = "2026-11-01"
+keep_vars = true
 
 [vars]
 PROVIDER = "claude"
 ALLOWED_ORIGINS = "https://yonifluk.github.io"
 DAILY_LIMIT = "40"
+
+[[kv_namespaces]]
+binding = "USAGE"
+id = "41c8a52e1f774e66891df996b133aa3a"
+
+[observability]
+enabled = true
