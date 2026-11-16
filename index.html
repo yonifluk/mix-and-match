@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" href="icon.svg">
 <link rel="icon" href="icon.svg">
-<script src="config.js?v=2"></script>
+<script src="config.js?v=3"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&family=Frank+Ruhl+Libre:wght@500;700&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
@@ -61,6 +61,14 @@ h2{font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:26px;margin:4p
 .chip:active{transform:scale(.96)}
 .go{margin-top:14px;width:100%;border-radius:999px;padding:15px;font-size:17px;font-weight:700;background:linear-gradient(90deg,#F7C4D2,#F3A9BE);color:var(--plum);position:relative;box-shadow:0 10px 24px -10px rgba(243,169,190,.8)}
 .go:disabled{opacity:.6}
+.style-tog{margin-top:10px;width:100%;border-radius:999px;padding:10px;font-size:13.5px;color:#F6E8EE;background:rgba(246,202,214,.16);border:1px solid rgba(246,202,214,.4);position:relative}
+.style-tog.off{background:none;opacity:.7}
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.board button{aspect-ratio:3/4;border-radius:16px;overflow:hidden;padding:0;background:var(--cream);box-shadow:0 8px 20px -14px rgba(90,30,55,.4)}
+.board img{width:100%;height:100%;object-fit:cover;display:block}
+.board .addb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:2px dashed #E3CFD6;background:#fff;color:var(--rose);font-size:13px;box-shadow:none}
+.board .addb b{font-size:26px;line-height:1}
+.sec{font-family:'Frank Ruhl Libre',serif;font-size:20px;margin:22px 0 4px}
 .inspo-btn{margin-top:10px;width:100%;border-radius:999px;padding:12px;font-size:14.5px;color:#F6E8EE;border:1px dashed rgba(255,255,255,.35);position:relative}
 .resnote .insimg{width:64px;height:64px;border-radius:12px;object-fit:cover;float:left;margin-inline-start:10px}
 .resnote:after{content:"";display:block;clear:both}
@@ -207,6 +215,7 @@ h2{font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:26px;margin:4p
       <div class="chips" id="quick"></div>
       <button class="go" id="goBtn">תלבישי אותי ✨</button>
       <button class="inspo-btn" id="inspoBtn">📷 ראיתי לוק שאהבתי – תעשי לי אותו מהארון</button>
+      <button class="style-tog hidden" id="styleTog"></button>
     </div>
     <div id="aiNote"></div>
     <div id="results"></div>
@@ -222,8 +231,8 @@ h2{font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:26px;margin:4p
 
   <!-- LOOKS -->
   <section class="view" id="v-looks">
-    <h2>לוקים שמורים</h2>
-    <p class="sub">השילובים שאהבת, מוכנים לפעם הבאה</p>
+    <h2>הסטייל שלי</h2>
+    <p class="sub">השראות ולוקים שאהבת</p>
     <div id="looksBody"></div>
   </section>
   <div id="syncNote"></div>
@@ -265,7 +274,9 @@ const newId = p => p + '_' + Date.now().toString(36) + Math.random().toString(36
 const todayStr = () => new Date().toISOString().slice(0,10);
 
 /* ---------- state ---------- */
-const state = { items:{}, looks:{}, loaded:false };
+const state = { items:{}, looks:{}, inspos:{}, loaded:false };
+const bucket = k => k === 'look' ? state.looks : k === 'inspo' ? state.inspos : state.items;
+let useStyle = true;
 let view = 'today', catFilter = 'all';
 let results = null, lastPrompt = '', resultSavedIds = {};
 let pendingCount = 0;
@@ -293,13 +304,13 @@ const imgOf = it => it.img || svgFor(it.cat, it.hex);
 /* ---------- storage: private db per user, else this browser ---------- */
 const LS_KEY = 'mixmatch_v1';
 function makeLocalStore(){
-  try { const raw = localStorage.getItem(LS_KEY); if (raw){ const d = JSON.parse(raw); Object.assign(state.items, d.items||{}); Object.assign(state.looks, d.looks||{}); } } catch(e){}
+  try { const raw = localStorage.getItem(LS_KEY); if (raw){ const d = JSON.parse(raw); Object.assign(state.items, d.items||{}); Object.assign(state.looks, d.looks||{}); Object.assign(state.inspos, d.inspos||{}); } } catch(e){}
   state.loaded = true;
-  const save = () => { try { localStorage.setItem(LS_KEY, JSON.stringify({items:state.items,looks:state.looks})); } catch(e){ toast('אין מספיק מקום לשמור בדפדפן הזה'); } };
+  const save = () => { try { localStorage.setItem(LS_KEY, JSON.stringify({items:state.items,looks:state.looks,inspos:state.inspos})); } catch(e){ toast('אין מספיק מקום לשמור בדפדפן הזה'); } };
   return {
     mode:'local',
-    async put(id, obj){ (obj.kind==='look'?state.looks:state.items)[id] = {...obj, id}; save(); renderAll(); },
-    async del(id){ delete state.items[id]; delete state.looks[id]; save(); renderAll(); }
+    async put(id, obj){ bucket(obj.kind)[id] = {...obj, id}; save(); renderAll(); },
+    async del(id){ delete state.items[id]; delete state.looks[id]; delete state.inspos[id]; save(); renderAll(); }
   };
 }
 function openIdb(){ return new Promise((res, rej) => { const r = indexedDB.open('mixmatch', 1); r.onupgradeneeded = () => r.result.createObjectStore('docs'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
@@ -307,13 +318,13 @@ async function makeIdbStore(){
   const db = await openIdb();
   const os = mode => db.transaction('docs', mode).objectStore('docs');
   const done = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
-  await new Promise((res, rej) => { const c = os('readonly').openCursor(); c.onsuccess = () => { const cur = c.result; if (cur){ const v = cur.value; if (v && (v.kind === 'item' || v.kind === 'look')) (v.kind === 'look' ? state.looks : state.items)[cur.key] = {...v, id: cur.key}; cur.continue(); } else res(); }; c.onerror = () => rej(c.error); });
+  await new Promise((res, rej) => { const c = os('readonly').openCursor(); c.onsuccess = () => { const cur = c.result; if (cur){ const v = cur.value; if (v && ['item','look','inspo'].includes(v.kind)) bucket(v.kind)[cur.key] = {...v, id: cur.key}; cur.continue(); } else res(); }; c.onerror = () => rej(c.error); });
   state.loaded = true;
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e){}
   return {
     mode:'local',
-    async put(id, obj){ const v = {...obj}; delete v.id; try { await done(os('readwrite').put(v, id)); } catch(e){ toast('אין מספיק מקום בטלפון לשמירה'); throw e; } (v.kind === 'look' ? state.looks : state.items)[id] = {...v, id}; renderAll(); },
-    async del(id){ await done(os('readwrite').delete(id)); delete state.items[id]; delete state.looks[id]; renderAll(); }
+    async put(id, obj){ const v = {...obj}; delete v.id; try { await done(os('readwrite').put(v, id)); } catch(e){ toast('אין מספיק מקום בטלפון לשמירה'); throw e; } bucket(v.kind)[id] = {...v, id}; renderAll(); },
+    async del(id){ await done(os('readwrite').delete(id)); delete state.items[id]; delete state.looks[id]; delete state.inspos[id]; renderAll(); }
   };
 }
 function makeDbStore(db, uid){
@@ -383,6 +394,9 @@ function renderAll(){
 
 function renderToday(){
   const n = Object.keys(state.items).length;
+  const ni = Object.keys(state.inspos).length, tog = $('#styleTog');
+  tog.classList.toggle('hidden', !ni || aiOff); tog.classList.toggle('off', !useStyle);
+  tog.textContent = useStyle ? `✨ בסטייל של לוח ההשראה שלי (${ni}) · פעיל` : `בסטייל של לוח ההשראה שלי · כבוי`;
   let note = '';
   if (state.loaded && n < 3 && !results){
     note = `<div class="card empty" style="margin-top:18px"><div class="art">👗</div><h3>בואי נמלא את הארון</h3>
@@ -480,13 +494,20 @@ function lookHtml(lk, idx, saved){
 function renderResults(){
   const r = results;
   let html = '';
-  if (r.note || r.inspo) html += `<div class="resnote">${r.inspo ? `<img class="insimg" src="${esc(r.inspo)}" alt="">` : ''}${esc(r.note)}</div>`;
+  if (r.note || r.inspo) html += `<div class="resnote">${r.inspo ? `<img class="insimg" src="${esc(r.inspo)}" alt="">` : ''}${esc(r.note)}${r.inspo ? `<div style="margin-top:10px"><button class="btn sm ${r.boardId?'saved':'ghost'}" id="toBoard">${r.boardId?'♥ נשמר בלוח ההשראה':'♡ שמרי ללוח ההשראה – אלמד את הסטייל'}</button></div>` : ''}</div>`;
   html += skinPicker();
   html += r.looks.map((lk,i) => lookHtml(lk,i,false)).join('');
   if (!r.inspo) html += `<button class="btn ghost more" id="moreBtn">🔄 עוד אפשרויות</button>`;
   $('#results').innerHTML = html;
   bindLookActs($('#results')); bindSkins($('#results'));
   if ($('#moreBtn')) $('#moreBtn').onclick = () => recommend(true);
+  if ($('#toBoard')) $('#toBoard').onclick = async () => {
+    if (results.boardId) return;
+    const id = newId('s'); results.boardId = id;
+    try { await store.put(id, {kind:'inspo', img: results.inspo, desc: results.note || '', created: Date.now()}); toast('נשמר בלוח ההשראה ✨ מעכשיו ההמלצות בסטייל הזה'); }
+    catch(e){ delete results.boardId; }
+    renderResults();
+  };
 }
 function bindLookActs(root){
   root.querySelectorAll('[data-save]').forEach(b => b.onclick = async () => {
@@ -532,15 +553,31 @@ function renderCloset(){
   bindActs(body);
 }
 
+function boardHtml(){
+  const ins = Object.values(state.inspos).sort((a,b)=>(b.created||0)-(a.created||0));
+  return `<div class="sec">לוח ההשראה שלי</div><p class="sub" style="margin-bottom:10px">לוקים של דוגמניות ומשפיעניות שאהבת. ההמלצות מנסות לחקות את הסטייל הזה.</p>
+    <div class="board"><button class="addb" id="addInspo"><b>+</b>הוספת השראה</button>${ins.map(s => `<button data-insp="${esc(s.id)}"><img src="${esc(s.img)}" alt="" loading="lazy"></button>`).join('')}</div>`;
+}
+function bindBoard(root){
+  const a = root.querySelector('#addInspo'); if (a) a.onclick = () => $('#inspoBtn').click();
+  root.querySelectorAll('[data-insp]').forEach(b => b.onclick = () => {
+    const s = state.inspos[b.dataset.insp]; if (!s) return;
+    openSheet(`<h3>השראה</h3><div style="border-radius:20px;overflow:hidden;margin:10px 0"><img src="${esc(s.img)}" style="width:100%;display:block" alt=""></div>
+      ${s.desc ? `<p style="line-height:1.55;margin:0 0 10px">${esc(s.desc)}</p>` : ''}
+      <div class="sheet-acts"><button class="btn danger" id="insDel">הסרה מהלוח</button><button class="btn rose" id="insOk">סגירה</button></div>`);
+    $('#insOk').onclick = closeSheet;
+    $('#insDel').onclick = async () => { if (await confirmBox('להסיר את ההשראה מהלוח?', 'הסרה')){ await store.del(s.id); closeSheet(); } };
+  });
+}
 function renderLooks(){
   const looks = Object.values(state.looks).sort((a,b)=>(b.created||0)-(a.created||0));
   const body = $('#looksBody');
   if (!looks.length){
-    body.innerHTML = `<div class="card empty"><div class="art">💗</div><h3>עוד אין לוקים שמורים</h3><p>כשתקבלי לוק שאת אוהבת, לחצי על "שמירה" והוא יחכה לך כאן.</p><button class="btn rose" data-go="today">למסך ההמלצות</button></div>`;
-    body.querySelector('[data-go]').onclick = () => go('today'); return;
+    body.innerHTML = boardHtml() + `<div class="sec">לוקים שמורים</div><div class="card empty"><div class="art">💗</div><h3>עוד אין לוקים שמורים</h3><p>כשתקבלי לוק שאת אוהבת, לחצי על "שמירה" והוא יחכה לך כאן.</p><button class="btn rose" data-go="today">למסך ההמלצות</button></div>`;
+    body.querySelector('[data-go]').onclick = () => go('today'); bindBoard(body); return;
   }
-  body.innerHTML = skinPicker() + (looks.map(lk => lookHtml(lk, 0, true)).join('') || '<div class="note">הפריטים של הלוקים השמורים כבר לא בארון.</div>');
-  bindLookActs(body); bindSkins(body);
+  body.innerHTML = boardHtml() + '<div class="sec">לוקים שמורים</div>' + skinPicker() + (looks.map(lk => lookHtml(lk, 0, true)).join('') || '<div class="note">הפריטים של הלוקים השמורים כבר לא בארון.</div>');
+  bindLookActs(body); bindSkins(body); bindBoard(body);
 }
 
 function bindActs(root){
@@ -700,6 +737,11 @@ let reqCtl = null, msgT = null;
 $('#goBtn').onclick = () => recommend(false);
 $('#prompt').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); recommend(false); } });
 
+$('#styleTog').onclick = () => { useStyle = !useStyle; renderToday(); };
+function styleNotes(){
+  if (!useStyle) return '';
+  return Object.values(state.inspos).sort((a,b)=>(b.created||0)-(a.created||0)).slice(0,10).map(s => s.desc).filter(Boolean).join(' | ').slice(0,1800);
+}
 /* inspiration: screenshot → same look from the closet */
 $('#inspoBtn').onclick = () => {
   if (itemsArr().length < 2){ toast('קודם צריך כמה פריטים בארון 🙂'); return; }
@@ -747,7 +789,7 @@ async function recommend(more){
     if (sample && !aiOff){
       reqCtl = new AbortController();
       try {
-        out = await ai({action:'recommend', request:req, avoid, season:seasonNow(), date:todayStr(),
+        out = await ai({action:'recommend', request:req, avoid, style: styleNotes(), season:seasonNow(), date:todayStr(),
           closet: itemsArr().map(it => ({id:it.id, name:it.name, cat:it.cat, colors:it.colors||[], style:it.style||[], season:it.season||'all', lastWorn:it.lastWorn||''}))}, reqCtl.signal);
       } catch(e){
         const k = sampleErr(e);
