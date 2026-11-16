@@ -860,7 +860,26 @@ $('#helpTab').onclick = () => openSheet(`<h3>איך זה עובד</h3>
   <div class="big-opt" style="cursor:default"><div class="ic">3</div><div><b>שומרים ולובשים</b><span>שומרים לוקים שאהבת, ו"לובשת את זה" מסמן מה נלבש – כדי שבפעם הבאה תקבלי גיוון.</span></div></div>
   <div class="note">${'🔒 הארון שלך נשמר רק בטלפון הזה – שום תמונה לא נשמרת בשרת. כדאי לפתוח תמיד מאותו מכשיר ודפדפן.'}</div>
   <button class="btn rose" style="width:100%;justify-content:center;margin-top:6px" id="helpOk">יאללה</button>
-`) || ($('#helpOk').onclick = closeSheet);
+  <button class="btn ghost" style="width:100%;justify-content:center;margin-top:10px" id="importBtn">📥 ייבוא ארון מהגרסה הקודמת</button>
+`) || (($('#importBtn').onclick = openImport) && ($('#helpOk').onclick = closeSheet));
+
+/* ---------- import from the previous (claude.ai) version ---------- */
+function openImport(){
+  openSheet(`<h3>ייבוא ארון</h3>
+    <p class="sub" style="margin:4px 0 12px">בגרסה הקודמת: "איך זה עובד" ← "📤 העברת הארון". אחר כך הדביקי כאן:</p>
+    <textarea id="impText" placeholder="הדביקי כאן" style="width:100%;height:130px;border-radius:14px;border:1px solid var(--line);padding:10px;font-size:13px;direction:ltr"></textarea>
+    <div class="sheet-acts"><button class="btn ghost" id="impPaste">📋 הדבקה</button><button class="btn rose" id="impGo">ייבוא</button></div>`);
+  $('#impPaste').onclick = async () => { try { $('#impText').value = await navigator.clipboard.readText(); } catch(e){ toast('לחיצה ארוכה בתיבה ← הדבק'); $('#impText').focus(); } };
+  $('#impGo').onclick = async () => {
+    let d; try { d = JSON.parse($('#impText').value.trim()); } catch(e){ toast('הטקסט לא תקין – נסי להעתיק שוב'); return; }
+    if (!d || !d.mixmatch || !Array.isArray(d.items)){ toast('זה לא נראה כמו ארון מ-Mix&Match'); return; }
+    $('#impGo').disabled = true; let n = 0;
+    for (const it of d.items){ if (!it || !it.id || it.kind !== 'item') continue; const v = {...it}; delete v.id; try { await store.put(it.id, v); n++; } catch(e){ break; } }
+    for (const lk of (d.looks || [])){ if (!lk || !lk.id || lk.kind !== 'look') continue; const v = {...lk}; delete v.id; try { await store.put(lk.id, v); } catch(e){ break; } }
+    closeSheet(); toast(`יובאו ${n} פריטים לארון 🎉`); go('closet');
+  };
+}
+if (location.hash === '#import') setTimeout(() => { if (store) openImport(); else setTimeout(openImport, 800); }, 400);
 
 /* ---------- boot ---------- */
 function blobToB64(blob){ return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); }); }
