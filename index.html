@@ -133,6 +133,8 @@ h2{font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:26px;margin:4p
 .look .tip,.look .miss{font-size:14px;line-height:1.5;border-radius:14px;padding:9px 12px;margin-top:8px}
 .look .tip{background:#FBF1F4}
 .look .miss{background:#F3F0EA;color:#5E554F}
+.shops{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.shops a{font-size:12.5px;text-decoration:none;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 11px}
 .acts{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
 .acts .btn{flex:1;justify-content:center;min-width:0}
 .btn.saved{background:var(--blush);color:var(--rose-d)}
@@ -471,6 +473,13 @@ function bindSkins(root){
   root.querySelectorAll('[data-skin]').forEach(b => b.onclick = () => { skin = b.dataset.skin; try{ localStorage.setItem('mm_skin', skin); }catch(e){} renderAll(); });
 }
 
+function shopLinks(missing){
+  const q = String(missing).split(/[.,;:–\-]| או /)[0].replace(/^(קפוצ׳ון|ג׳קט)?\s*/, m => m).trim().slice(0, 50);
+  if (!q) return '';
+  const e = encodeURIComponent(q);
+  const shops = [['ZARA', 'https://www.zara.com/il/he/search?searchTerm=' + e + '&section=WOMAN'], ['Terminal X', 'https://www.terminalx.com/catalogsearch/result?q=' + e], ['Google', 'https://www.google.com/search?tbm=shop&q=' + e]];
+  return `<div class="shops">${shops.map(([n, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${n} ↗</a>`).join('')}</div>`;
+}
 function tileHtml(it){ return `<div class="tile"><img src="${esc(imgOf(it))}" alt=""><div class="lbl">${esc(it.name)}</div></div>`; }
 function lookHtml(lk, idx, saved){
   const its = (lk.items||[]).map(id => state.items[id]).filter(Boolean);
@@ -483,7 +492,7 @@ function lookHtml(lk, idx, saved){
       <h3>${esc(lk.title || 'הלוק שלך')}</h3>
       ${lk.why ? `<p class="why">${esc(lk.why)}</p>` : ''}
       ${lk.tip ? `<div class="tip">💡 ${esc(lk.tip)}</div>` : ''}
-      ${lk.missing ? `<div class="miss">🛍️ מה היה מושלם כאן: ${esc(lk.missing)}</div>` : ''}
+      ${lk.missing ? `<div class="miss">🛍️ מה היה מושלם כאן: ${esc(lk.missing)}${shopLinks(lk.missing)}</div>` : ''}
       <div class="acts">
         ${saved ? `<button class="btn ghost sm" data-unsave="${esc(lk.id)}">הסרה</button>`
                 : `<button class="btn sm ${resultSavedIds[idx]?'saved':'ghost'}" data-save="${idx}">${resultSavedIds[idx]?'♥ נשמר':'♡ שמירה'}</button>`}
@@ -543,7 +552,7 @@ function renderCloset(){
     bindActs(body); return;
   }
   let html = '<div class="grid">';
-  for (let i=0;i<pendingCount;i++) html += '<div class="item pending"><div class="ph"><div class="spin"></div></div><div class="nm" style="color:var(--mute)">מזהה את הבגד…</div></div>';
+  for (let i=0;i<pendingCount;i++) html += '<div class="item pending"><div class="ph"><div class="spin"></div></div><div class="nm" style="color:var(--mute)">' + (whiteBgOn ? (bgReady ? 'מלבינה רקע ומזהה…' : 'מכינה רקע לבן (בפעם הראשונה לוקח רגע)…') : 'מזהה את הבגד…') + '</div></div>';
   html += list.map(it => `<button class="item" data-edit="${esc(it.id)}"><div class="ph"><img src="${esc(imgOf(it))}" alt="" loading="lazy"></div><div class="nm">${esc(it.name||'פריט')}</div>${it.demo?'<span class="demo">דוגמה</span>':''}</button>`).join('');
   html += '</div>';
   const hasDemo = all.some(it => it.demo);
@@ -595,11 +604,13 @@ function openAdd(){
   openSheet(`<h3>הוספת בגדים לארון</h3><p class="sub" style="margin:0">טיפ: צלמי כל פריט לבד, על רקע חלק (מיטה, רצפה או קיר).</p>
     <button class="big-opt" id="optCam"><div class="ic">📸</div><div><b>צילום עכשיו</b><span>פריט אחד בכל פעם</span></div></button>
     <button class="big-opt" id="optGal"><div class="ic">🖼️</div><div><b>בחירה מהגלריה</b><span>אפשר לבחור הרבה תמונות ביחד</span></div></button>
+    <label class="big-opt" style="cursor:pointer"><div class="ic">🤍</div><div style="flex:1"><b>רקע לבן אוטומטי</b><span>מעלים את החדר מאחורי הבגד – שייראה כמו בקטלוג</span></div><input type="checkbox" id="optWhite" ${whiteBgOn ? 'checked' : ''} style="width:22px;height:22px;accent-color:#C8466E"></label>
     <button class="big-opt" id="optMan"><div class="ic">✍️</div><div><b>הוספה בלי תמונה</b><span>רק שם, סוג וצבע</span></div></button>
     ${!imgOk ? '<div class="note">זיהוי אוטומטי מתמונה לא זמין כרגע – אחרי הצילום תמלאי פרטים בעצמך.</div>' : ''}`);
   $('#optCam').onclick = () => $('#camIn').click();
   $('#optGal').onclick = () => $('#galIn').click();
   $('#optMan').onclick = () => openEdit(null);
+  $('#optWhite').onchange = e => { whiteBgOn = e.target.checked; try { localStorage.setItem('mm_whitebg', whiteBgOn ? '1' : '0'); } catch(_){} };
 }
 ['#camIn','#galIn'].forEach(s => $(s).onchange = e => { const f = [...e.target.files]; e.target.value = ''; if (f.length) handleFiles(f); });
 
@@ -611,7 +622,45 @@ function drawScaled(im, max){
   const c = document.createElement('canvas'); c.width = Math.round(im.naturalWidth*s); c.height = Math.round(im.naturalHeight*s);
   const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0,0,c.width,c.height); g.drawImage(im,0,0,c.width,c.height); return c;
 }
-async function prepPhoto(file){
+/* white background: remove the room behind the garment, entirely in the browser */
+let whiteBgOn = (() => { try { return localStorage.getItem('mm_whitebg') !== '0'; } catch(e){ return true; } })();
+let bgLib = null, bgReady = false;
+async function cutout(blob){
+  if (!bgLib) bgLib = import('https://esm.sh/@imgly/background-removal@1.7.0');
+  const { removeBackground } = await bgLib;
+  const png = await removeBackground(blob, { model: 'isnet_quint8', output: { format: 'image/png' } });
+  bgReady = true;
+  const im = await loadImage(png);
+  // find the garment's bounding box from the alpha channel
+  const s = Math.min(1, 256 / Math.max(im.naturalWidth, im.naturalHeight));
+  const sc = document.createElement('canvas'); sc.width = Math.max(1, Math.round(im.naturalWidth*s)); sc.height = Math.max(1, Math.round(im.naturalHeight*s));
+  const sg = sc.getContext('2d'); sg.drawImage(im, 0, 0, sc.width, sc.height);
+  const a = sg.getImageData(0, 0, sc.width, sc.height).data;
+  let x0 = sc.width, y0 = sc.height, x1 = -1, y1 = -1;
+  for (let y = 0; y < sc.height; y++) for (let x = 0; x < sc.width; x++) if (a[(y*sc.width + x)*4 + 3] > 40){ if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  if (x1 < 0) throw new Error('empty');
+  x0 /= s; y0 /= s; x1 = (x1 + 1) / s; y1 = (y1 + 1) / s;
+  const w = x1 - x0, h = y1 - y0, side = Math.max(w, h) * 1.14, out = Math.min(1024, Math.round(side));
+  const c = document.createElement('canvas'); c.width = c.height = out;
+  const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, out, out);
+  const k = out / side; g.drawImage(im, x0, y0, w, h, (out - w*k)/2, (out - h*k)/2, w*k, h*k);
+  return c;
+}
+async function prepPhoto(file, white){
+  if (white){
+    try {
+      const c = await cutout(file);
+      const small = document.createElement('canvas'); small.width = small.height = 560;
+      small.getContext('2d').drawImage(c, 0, 0, 560, 560);
+      let q = .8, url = small.toDataURL('image/jpeg', q);
+      while (url.length > 170000 && q > .4){ q -= .1; url = small.toDataURL('image/jpeg', q); }
+      const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', .88));
+      return {url, blob};
+    } catch(e){ console.warn('bg removal failed', e); }
+  }
+  return prepPhotoPlain(file);
+}
+async function prepPhotoPlain(file){
   const im = await loadImage(file);
   let q = .76, c = drawScaled(im, 560), url = c.toDataURL('image/jpeg', q);
   while (url.length > 170000 && q > .4){ q -= .1; url = c.toDataURL('image/jpeg', q); }
@@ -636,7 +685,7 @@ async function handleFiles(files){
   let added = 0, manualId = null;
   for (const f of files){
     try {
-      const {url, blob} = await prepPhoto(f);
+      const {url, blob} = await prepPhoto(f, whiteBgOn);
       let meta = null;
       if (sample && imgOk && !aiOff){
         try { meta = await ai({action:'tag', image: await blobToB64(blob)}); }
@@ -669,7 +718,13 @@ function openEdit(id){
     <div class="field"><label>סגנון</label><div class="pick" id="edStyle">${STYLES.map(s=>`<button class="fchip" data-k="${s}">${s}</button>`).join('')}</div></div>
     <div class="field"><label>עונה</label><div class="pick" id="edSeason">${Object.entries(SEASONS).map(([k,v])=>`<button class="fchip" data-k="${k}">${v}</button>`).join('')}</div></div>
     ${it.lastWorn ? `<p class="sub" style="margin:14px 0 0">נלבש לאחרונה: ${new Date(it.lastWorn).toLocaleDateString('he-IL')}</p>` : ''}
+    ${it.img ? '<button class="btn ghost sm" id="edWhite" style="display:flex;margin:14px auto 0">🤍 להלבין רקע לתמונה</button>' : ''}
     <div class="sheet-acts">${id?'<button class="btn danger" id="edDel">מחיקה</button>':''}<button class="btn rose" id="edSave">שמירה</button></div>`);
+  if ($('#edWhite')) $('#edWhite').onclick = async () => {
+    const b = $('#edWhite'); b.disabled = true; b.textContent = bgReady ? 'מלבינה…' : 'מכינה מנוע רקע (פעם ראשונה)…';
+    try { const blob = await (await fetch(it.img)).blob(); const r = await prepPhoto(blob, true); it.img = r.url; $('#edImg').src = r.url; b.textContent = '✓ הרקע הולבן – לחצי שמירה'; }
+    catch(e){ b.textContent = 'לא הצליח – נסי שוב'; b.disabled = false; }
+  };
   const paint = () => {
     $('#edCat').querySelectorAll('.fchip').forEach(b => b.classList.toggle('on', b.dataset.k === sel.cat));
     $('#edStyle').querySelectorAll('.fchip').forEach(b => b.classList.toggle('on', sel.style.has(b.dataset.k)));
