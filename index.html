@@ -12,7 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="config.js?v=5"></script>
+<script src="config.js?v=6"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&family=Frank+Ruhl+Libre:wght@500;700&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
@@ -284,6 +284,7 @@ const todayStr = () => new Date().toISOString().slice(0,10);
 const state = { items:{}, looks:{}, inspos:{}, loaded:false };
 const bucket = k => k === 'look' ? state.looks : k === 'inspo' ? state.inspos : state.items;
 let useStyle = true;
+let localStore = null, cloudUser = null, auth = null;
 let view = 'today', catFilter = 'all';
 let results = null, lastPrompt = '', resultSavedIds = {};
 let pendingCount = 0;
@@ -980,7 +981,6 @@ async function ai(payload, signal){
 const h0 = location.hash.slice(1); if (['today','closet','looks'].includes(h0)) view = h0;
 renderAll();
 sample = window.MM_API_URL ? {} : null; imgOk = !!sample; aiOff = !sample;
-let localStore = null, cloudUser = null, auth = null;
 (async () => {
   try { localStore = await makeIdbStore(); } catch(e){ localStore = makeLocalStore(); }
   if (!store) store = localStore;
