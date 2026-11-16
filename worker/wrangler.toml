@@ -3,6 +3,6 @@ main = "worker.js"
 compatibility_date = "2026-11-01"
 
 [vars]
-PROVIDER = "gemini"
+PROVIDER = "claude"
 ALLOWED_ORIGINS = "https://yonifluk.github.io"
 DAILY_LIMIT = "40"
