@@ -19,7 +19,44 @@ cat: top=חולצה/גופייה/סוודר, bottom=מכנסיים/חצאית/ט
 
 const clip = (v, n) => String(v ?? "").replace(/[\r\n|]+/g, " ").slice(0, n);
 
-function stylistPrompt({ request, avoid, closet, season, date, style }) {
+const MODES = {
+  classic: "סגנון: קלאסי – שילובים בטוחים, מאוזנים ומחמיאים שתמיד עובדים.",
+  creative: "סגנון: יצירתי – הפתיעי! שילובי צבעים לא צפויים, שכבות מעניינות, פריט אחד שמשנה את כל הלוק. הימנעי מהשילוב הכי צפוי.",
+  bold: "סגנון: נועז – הוציאי אותה מאזור הנוחות: קונטרסטים חזקים, שילוב סגנונות (למשל ספורטיבי עם אלגנטי), פרופורציות מפתיעות. בשדה why הסבירי למה זה עובד ואיך ללבוש את זה בביטחון.",
+};
+
+async function getTrends(env, ctx) {
+  if (!env.USAGE || (env.PROVIDER || "gemini") !== "claude") return "";
+  const trends = (await env.USAGE.get("trends")) || "";
+  const fresh = await env.USAGE.get("trends_fresh");
+  if (!fresh && !(await env.USAGE.get("trends_lock"))) {
+    await env.USAGE.put("trends_lock", "1", { expirationTtl: 900 });
+    ctx.waitUntil(refreshTrends(env).catch(e => console.log("trends", String(e))));
+  }
+  return trends;
+}
+
+async function refreshTrends(env) {
+  const month = new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-5-5", max_tokens: 1200,
+      tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3 }],
+      messages: [{ role: "user", content: `Search for the current women's fashion trends for ${month} (street style, Zara/H&M season, Instagram influencers). Then write ONLY a short Hebrew summary of 6-8 bullet points: trending colors, key pieces, combinations, silhouettes and layering ideas that work with an everyday wardrobe. No intro, no sources.` }],
+    }),
+  });
+  if (!r.ok) throw new Error("trends " + r.status + " " + (await r.text()).slice(0, 200));
+  const j = await r.json();
+  const text = j.content.filter(c => c.type === "text").map(c => c.text).join("").trim().slice(0, 1500);
+  if (text) {
+    await env.USAGE.put("trends", text);
+    await env.USAGE.put("trends_fresh", "1", { expirationTtl: 7 * 24 * 3600 });
+  }
+}
+
+function stylistPrompt({ request, avoid, closet, season, date, style, mode, trends }) {
   const lines = closet.map(it => [
     clip(it.id, 40), clip(it.name, 60), CATS[it.cat] || "פריט",
     (it.colors || []).slice(0, 4).map(c => clip(c, 20)).join("/") || "-",
@@ -33,7 +70,7 @@ ${lines}
 
 התאריך היום: ${clip(date, 12)}. העונה בישראל: ${clip(season, 10)}.
 הבקשה שלה: "${clip(request, 300)}"
-${style ? `הסגנון האישי שלה – מלוח ההשראה (לוקים של דוגמניות ומשפיעניות שהיא שמרה): ${clip(style, 1800)}
+${MODES[mode] ? MODES[mode] + "\n" : ""}${trends ? `טרנדים עדכניים העונה (השתמשי בהם כהשראה כשזה מתאים לבגדים שלה, וציייני בשדה why כשלוק נוגע בטרנד): ${clip(trends, 1500)}\n` : ""}${style ? `הסגנון האישי שלה – מלוח ההשראה (לוקים של דוגמניות ומשפיעניות שהיא שמרה): ${clip(style, 1800)}
 בני את הלוקים כך שיחקו את הסגנון הזה ככל האפשר מהבגדים שיש לה – אותה אווירה, שילובי צבעים, גזרות ושכבות – ובשדה why ציייני איך הלוק מתחבר לסגנון שלה.
 ` : ""}${avoid ? `היא כבר ראתה לוקים עם השילובים האלה – תני לה שילובים אחרים ושונים: ${clip(avoid, 600)}` : ""}
 
@@ -122,7 +159,7 @@ async function ask(env, quick, prompt, image) {
 const json = (obj, status, headers) => new Response(JSON.stringify(obj), { status, headers: { ...headers, "content-type": "application/json" } });
 
 export default {
-  async fetch(req, env) {
+  async fetch(req, env, ctx) {
     const origin = req.headers.get("Origin") || "";
     const allowed = (env.ALLOWED_ORIGINS || "").split(",").map(s => s.trim()).filter(Boolean);
     const ok = !allowed.length || allowed.includes(origin);
@@ -146,7 +183,7 @@ export default {
     try {
       let text;
       if (d.action === "tag" && image) text = await ask(env, true, TAG_PROMPT, image);
-      else if (d.action === "recommend" && closet.length >= 2) text = await ask(env, false, stylistPrompt({ ...d, closet }));
+      else if (d.action === "recommend" && closet.length >= 2) text = await ask(env, false, stylistPrompt({ ...d, closet, trends: await getTrends(env, ctx).catch(() => "") }));
       else if (d.action === "inspo" && image && closet.length >= 2) text = await ask(env, false, inspoPrompt({ ...d, closet }), image);
       else return json({ error: "bad_request" }, 400, cors);
       return json(parseJson(text), 200, cors);

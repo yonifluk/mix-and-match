@@ -12,7 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="config.js?v=6"></script>
+<script src="config.js?v=7"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&family=Frank+Ruhl+Libre:wght@500;700&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
@@ -62,6 +62,9 @@ h2{font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:26px;margin:4p
 .ask textarea:focus{border-color:var(--blush);background:rgba(255,255,255,.13)}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:12px 0 2px;scrollbar-width:none;position:relative}
 .chips::-webkit-scrollbar{display:none}
+.modes{display:flex;gap:6px;margin-top:12px;position:relative;background:rgba(255,255,255,.07);padding:4px;border-radius:999px}
+.modes button{flex:1;border-radius:999px;padding:8px 4px;font-size:13.5px;color:#E8D5DD}
+.modes button.on{background:#F7C4D2;color:var(--plum);font-weight:700}
 .chip{flex:0 0 auto;border-radius:999px;padding:8px 13px;font-size:13.5px;border:1px solid rgba(255,255,255,.22);color:#F6E8EE;background:rgba(255,255,255,.06);white-space:nowrap}
 .chip:active{transform:scale(.96)}
 .go{margin-top:14px;width:100%;border-radius:999px;padding:15px;font-size:17px;font-weight:700;background:linear-gradient(90deg,#F7C4D2,#F3A9BE);color:var(--plum);position:relative;box-shadow:0 10px 24px -10px rgba(243,169,190,.8)}
@@ -219,6 +222,7 @@ h2{font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:26px;margin:4p
       <h1 id="greet">בוקר טוב ☀️</h1>
       <p>מה בא לך ללבוש היום? תגידי במילים שלך.</p>
       <textarea id="prompt" placeholder="למשל: באלי משהו ספורטיבי בשחור וורוד"></textarea>
+      <div class="modes" id="modes"><button data-m="classic">😌 קלאסי</button><button data-m="creative">✨ יצירתי</button><button data-m="bold">🔥 נועז</button></div>
       <div class="chips" id="quick"></div>
       <button class="go" id="goBtn">תלבישי אותי ✨</button>
       <button class="inspo-btn" id="inspoBtn">📷 ראיתי לוק שאהבתי – תעשי לי אותו מהארון</button>
@@ -284,6 +288,7 @@ const todayStr = () => new Date().toISOString().slice(0,10);
 const state = { items:{}, looks:{}, inspos:{}, loaded:false };
 const bucket = k => k === 'look' ? state.looks : k === 'inspo' ? state.inspos : state.items;
 let useStyle = true;
+let styleMode = (() => { try { return localStorage.getItem('mm_mode') || 'creative'; } catch(e){ return 'creative'; } })();
 let localStore = null, cloudUser = null, auth = null;
 let view = 'today', catFilter = 'all';
 let results = null, lastPrompt = '', resultSavedIds = {};
@@ -815,6 +820,9 @@ $('#goBtn').onclick = () => recommend(false);
 $('#prompt').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); recommend(false); } });
 
 $('#styleTog').onclick = () => { useStyle = !useStyle; renderToday(); };
+function paintModes(){ document.querySelectorAll('#modes button').forEach(b => b.classList.toggle('on', b.dataset.m === styleMode)); }
+document.querySelectorAll('#modes button').forEach(b => b.onclick = () => { styleMode = b.dataset.m; try { localStorage.setItem('mm_mode', styleMode); } catch(e){} paintModes(); });
+paintModes();
 function styleNotes(){
   if (!useStyle) return '';
   return Object.values(state.inspos).sort((a,b)=>(b.created||0)-(a.created||0)).slice(0,10).map(s => s.desc).filter(Boolean).join(' | ').slice(0,1800);
@@ -866,8 +874,7 @@ async function recommend(more){
     if (sample && !aiOff){
       reqCtl = new AbortController();
       try {
-        const st = styleNotes();
-        out = await ai({action:'recommend', request: st ? (req + ' — ובסגנון של לוח ההשראה שלה: ' + st).slice(0, 300) : req, avoid, style: st, season:seasonNow(), date:todayStr(),
+        out = await ai({action:'recommend', request:req, avoid, style: styleNotes(), mode: styleMode, season:seasonNow(), date:todayStr(),
           closet: itemsArr().map(it => ({id:it.id, name:it.name, cat:it.cat, colors:it.colors||[], style:it.style||[], season:it.season||'all', lastWorn:it.lastWorn||''}))}, reqCtl.signal);
       } catch(e){
         const k = sampleErr(e);
